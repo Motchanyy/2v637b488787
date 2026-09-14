@@ -22,7 +22,6 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const compression = require("compression");
-const cors = require("cors");
 const cron = require("node-cron");
 
 const helmet = require("helmet");
@@ -31,6 +30,7 @@ const session = require("express-session");
 // Внутрішні модулі
 const i18n = require("./config/i18n/i18n");
 const loadLanguages = require("./middlewares/languages");
+const corsHandler = require("./middlewares/cors/cors");
 
 // Система модулів
 const moduleManager = require("./core/modules/modules-manager.js");
@@ -94,21 +94,7 @@ app.use("/assets", express.static(assetsPath));
 // ─── COOKIES ТА CORS ─────────────────────────────────
 app.use(cookieParser());
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "")
-	.split(",")
-	.map((s) => s.trim())
-	.filter(Boolean);
-app.use(
-	cors({
-		origin: (origin, cb) => {
-			if (!origin) return cb(null, true);
-			if (allowedOrigins.length === 0) return cb(null, true);
-			if (allowedOrigins.includes(origin)) return cb(null, true);
-			return cb(new Error("Not allowed by CORS"));
-		},
-		credentials: true,
-	})
-);
+app.use(corsHandler);
 
 // Серверні сесії
 app.use(
@@ -224,9 +210,11 @@ app.use("/", require("./routes/catalog/brands/brands"));
 
 // ─── КОНТАКТ-ЦЕНТР ──────────────────────────────────
 app.use("/", require("./routes/contact-center/contact-center"));
+app.use("/", require("./routes/contact-center/channels/channels"));
 app.use("/", require("./routes/contact-center/telegram/telegram"));
 app.use("/", require("./routes/contact-center/web-chat/web-chat"));
 app.use("/", require("./routes/contact-center/instagram/instagram"));
+app.use("/", require("./routes/contact-center/webhooks/webhooks"));
 
 // ─── CRM МОДУЛІ ─────────────────────────────────────
 app.use("/", require("./routes/leads/leads"));
