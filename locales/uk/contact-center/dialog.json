@@ -1,0 +1,36 @@
+{
+  "contact_center": {
+    "dialog": {
+      "title": "Діалог",
+      "breadcrumb": { "home": "Головна", "contact_center": "Контакт-центр", "current": "Діалог" },
+      "contact": "Співрозмовник",
+      "contact_name": "Ім'я",
+      "contact_username": "Username",
+      "contact_phone": "Телефон",
+      "contact_email": "Email",
+      "channel": "Канал",
+      "date_add": "Створено",
+      "actions": "Дії",
+      "take": "Взяти в роботу",
+      "release": "Звільнити",
+      "taken_by_other": "Веде інший менеджер",
+      "resolve": "Завершити",
+      "archive": "В архів",
+      "reopen": "Відкрити знову",
+      "placeholder": "Введіть повідомлення…",
+      "send_hint": "Enter — надіслати, Shift+Enter — новий рядок",
+      "empty": "Повідомлень ще немає",
+      "load_error": "Не вдалося завантажити повідомлення",
+      "send_error": "Помилка відправки",
+      "failed": "Не доставлено",
+      "pending": "Надсилається",
+      "attach_loading": "Завантаження файлу…",
+      "attach_failed": "Файл недоступний",
+      "channel_inactive": "Канал вимкнено — відправка недоступна",
+      "today": "Сьогодні",
+      "yesterday": "Вчора",
+      "location": "Показати на карті",
+      "saved": "Збережено"
+    }
+  }
+}
