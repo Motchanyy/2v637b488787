@@ -1,0 +1,203 @@
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const axios = require("axios");
+
+const connection_pool = require("../../config/database/connection_pool");
+const config = require("../../config/config");
+const logging = require("../../logging/logging");
+const realtime = require("./realtime");
+
+const P = config.get("configDatabase").prefix;
+const T_ATTACH = P + "contact_center_attachments";
+
+// Куди складаємо файли і як їх віддаємо
+const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads", "contact-center");
+const PUBLIC_PREFIX = "/uploads/contact-center";
+
+const MAX_SIZE = 50 * 1024 * 1024;
+const MAX_ATTEMPTS = 5;
+
+// Розширення беремо з MIME, а не з імені файлу — ім'я приходить від клієнта
+const MIME_EXT = {
+	"image/jpeg": ".jpg",
+	"image/png": ".png",
+	"image/gif": ".gif",
+	"image/webp": ".webp",
+	"video/mp4": ".mp4",
+	"video/quicktime": ".mov",
+	"audio/mpeg": ".mp3",
+	"audio/ogg": ".ogg",
+	"audio/mp4": ".m4a",
+	"application/pdf": ".pdf",
+	"application/zip": ".zip",
+};
+
+function monthDir() {
+	const now = new Date();
+	return path.join(String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, "0"));
+}
+
+function extFor(mime, fileName) {
+	if (MIME_EXT[mime]) return MIME_EXT[mime];
+	const ext = path.extname(String(fileName || "")).toLowerCase();
+	return /^\.[a-z0-9]{1,6}$/.test(ext) ? ext : ".bin";
+}
+
+/**
+ * Завантажує одне вкладення до себе.
+ * source_type визначає, як дістати файл:
+ *   telegram_file_id → getFile, потім CDN бота
+ *   url              → пряме завантаження (з Bearer для Meta CDN)
+ */
+async function fetchAttachment(att) {
+	let url = null;
+	const headers = {};
+
+	if (att.source_type === "telegram_file_id") {
+		const token = await resolveTelegramToken(att.id_channel);
+		if (!token) throw new Error("Telegram token unavailable");
+
+		const meta = await axios.get(`https://api.telegram.org/bot${token}/getFile`, {
+			params: { file_id: att.source_ref },
+			timeout: 15000,
+		});
+
+		if (!meta.data || !meta.data.ok) throw new Error("getFile failed");
+		url = `https://api.telegram.org/file/bot${token}/${meta.data.result.file_path}`;
+	} else if (att.source_type === "url") {
+		url = att.source_ref;
+
+		// Meta CDN віддає медіа лише з токеном застосунку
+		if (/(fbsbx|fbcdn|cdninstagram)\.com/.test(url)) {
+			const token = await resolveInstagramToken(att.id_channel);
+			if (token) headers.Authorization = "Bearer " + token;
+		}
+	} else {
+		throw new Error("Unsupported source_type: " + att.source_type);
+	}
+
+	const response = await axios.get(url, {
+		responseType: "arraybuffer",
+		headers: headers,
+		timeout: 60000,
+		maxContentLength: MAX_SIZE,
+		maxBodyLength: MAX_SIZE,
+	});
+
+	return {
+		buffer: Buffer.from(response.data),
+		mime: String(response.headers["content-type"] || "").split(";")[0] || att.mime || "application/octet-stream",
+	};
+}
+
+// Токени дістаються ліниво, щоб не тягнути адаптери в цей модуль циклічно
+async function resolveTelegramToken(idChannel) {
+	const cryptoHelper = require("../../helpers/crypto");
+	const [rows] = await connection_pool.query(`SELECT token_cipher, token_iv, token_tag FROM ${P}contact_center_channel_telegram WHERE id_channel = ? LIMIT 1`, [idChannel]);
+	const r = rows[0];
+	return r ? cryptoHelper.decrypt(r.token_cipher, r.token_iv, r.token_tag) : null;
+}
+
+async function resolveInstagramToken(idChannel) {
+	const cryptoHelper = require("../../helpers/crypto");
+	const [rows] = await connection_pool.query(`SELECT token_cipher, token_iv, token_tag FROM ${P}contact_center_channel_instagram WHERE id_channel = ? LIMIT 1`, [idChannel]);
+	const r = rows[0];
+	return r ? cryptoHelper.decrypt(r.token_cipher, r.token_iv, r.token_tag) : null;
+}
+
+/**
+ * Обробляє одне вкладення: качає, зберігає, оновлює рядок, шле подію.
+ * Дедуплікація за sha256: той самий файл не зберігається двічі.
+ */
+async function processAttachment(att) {
+	try {
+		await connection_pool.query(`UPDATE ${T_ATTACH} SET status = 'processing', attempts = attempts + 1 WHERE id = ?`, [att.id]);
+
+		const file = await fetchAttachment(att);
+		const sha = crypto.createHash("sha256").update(file.buffer).digest("hex");
+
+		// Такий файл уже є — перевикористовуємо шлях
+		const [dup] = await connection_pool.query(`SELECT path, thumb_path FROM ${T_ATTACH} WHERE sha256 = ? AND status = 'done' AND path IS NOT NULL LIMIT 1`, [sha]);
+
+		let publicPath;
+
+		if (dup.length) {
+			publicPath = dup[0].path;
+		} else {
+			const dir = monthDir();
+			const absDir = path.join(UPLOAD_ROOT, dir);
+			await fs.promises.mkdir(absDir, { recursive: true });
+
+			const fileName = sha.slice(0, 32) + extFor(file.mime, att.file_name);
+			await fs.promises.writeFile(path.join(absDir, fileName), file.buffer);
+
+			publicPath = PUBLIC_PREFIX + "/" + dir.replace(/\\/g, "/") + "/" + fileName;
+		}
+
+		await connection_pool.query(
+			`UPDATE ${T_ATTACH}
+             SET status = 'done', path = ?, mime = ?, size = ?, sha256 = ?, error = NULL
+             WHERE id = ?`,
+			[publicPath, file.mime, file.buffer.length, sha, att.id]
+		);
+
+		realtime.attachmentReady(att.id_conversation, att.id_message, att.sort_order, {
+			id: att.id,
+			type: att.type,
+			subtype: att.subtype,
+			path: publicPath,
+			thumb_path: null,
+			file_name: att.file_name,
+			mime: file.mime,
+			size: file.buffer.length,
+			status: "done",
+		});
+
+		return true;
+	} catch (error) {
+		const attempts = (att.attempts | 0) + 1;
+		const failed = attempts >= MAX_ATTEMPTS;
+
+		// Експоненційна затримка: 1, 2, 4, 8 хвилин
+		const delayMin = Math.pow(2, attempts - 1);
+
+		await connection_pool.query(
+			`UPDATE ${T_ATTACH}
+             SET status = ?, error = ?, date_next_try = DATE_ADD(NOW(), INTERVAL ? MINUTE)
+             WHERE id = ?`,
+			[failed ? "failed" : "pending", String(error.message || error).slice(0, 500), delayMin, att.id]
+		);
+
+		console.error("attachment download:", att.id, error.message);
+		return false;
+	}
+}
+
+/** Один прохід черги. Викликається одразу після вебхука і за розкладом. */
+async function processQueue(limit) {
+	const lim = Math.min(parseInt(limit, 10) || 10, 50);
+
+	try {
+		const [rows] = await connection_pool.query(
+			`SELECT id, id_message, id_conversation, id_channel, type, subtype,
+                    sort_order, file_name, mime, source_type, source_ref, attempts
+             FROM ${T_ATTACH}
+             WHERE status = 'pending'
+               AND (date_next_try IS NULL OR date_next_try <= NOW())
+             ORDER BY id ASC
+             LIMIT ${lim}`
+		);
+
+		for (const att of rows) {
+			await processAttachment(att);
+		}
+
+		return rows.length;
+	} catch (error) {
+		logging.error(error);
+		return 0;
+	}
+}
+
+module.exports = { processQueue, processAttachment, UPLOAD_ROOT, PUBLIC_PREFIX };

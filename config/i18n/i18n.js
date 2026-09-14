@@ -91,8 +91,10 @@ const RELATIVE_FILE_PATHS = [
 	"./locales/{locale}/contact-center/telegram/edit.json",
 	"./locales/{locale}/contact-center/telegram/settings.json",
 	"./locales/{locale}/contact-center/chat.json",
+	"./locales/{locale}/contact-center/channels.json",
 	"./locales/{locale}/contact-center/webchat/view.json",
 	"./locales/{locale}/contact-center/instagram/settings.json",
+	"./locales/{locale}/contact-center/dialog.json",
 
 	// --- Налаштування ---
 	"./locales/{locale}/settings/integration/integration.json",
