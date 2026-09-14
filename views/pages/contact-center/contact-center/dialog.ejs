@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html class="h-100" lang="<%= i18n.__('lang_iso') %>">
+	<head>
+		<title><%= data.conversation.contact_name || i18n.__('contact_center.dialog.title') %></title>
+		<%- include('../../../partials/head'); %>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
+		<style>
+			.dialog-feed {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				overflow-y: auto;
+				overflow-x: hidden;
+				scrollbar-width: thin;
+				padding: 1rem;
+				background: #f7f8fa;
+			}
+
+			.msg-row {
+				display: flex;
+				margin-bottom: 0.75rem;
+			}
+
+			.msg-row.out {
+				justify-content: flex-end;
+			}
+
+			.msg-bubble {
+				max-width: 70%;
+				padding: 0.5rem 0.75rem;
+				background: #fff;
+				border: 1px solid #e3e6ea;
+				position: relative;
+				word-break: break-word;
+				white-space: pre-wrap;
+			}
+
+			.msg-row.out .msg-bubble {
+				background: #e7f1ff;
+				border-color: #cfe2ff;
+			}
+
+			.msg-row.failed .msg-bubble {
+				border-color: #dc3545;
+				background: #fdf1f2;
+			}
+
+			.msg-meta {
+				font-size: 0.72rem;
+				color: #6c757d;
+				margin-top: 0.25rem;
+				display: flex;
+				align-items: center;
+				gap: 0.35rem;
+				justify-content: flex-end;
+			}
+
+			.msg-row.in .msg-meta {
+				justify-content: flex-start;
+			}
+
+			.msg-system {
+				text-align: center;
+				font-size: 0.78rem;
+				color: #6c757d;
+				margin: 0.75rem 0;
+			}
+
+			.msg-day {
+				text-align: center;
+				margin: 1rem 0 0.75rem;
+			}
+
+			.msg-day span {
+				background: #e3e6ea;
+				color: #495057;
+				font-size: 0.75rem;
+				padding: 0.15rem 0.6rem;
+			}
+
+			.msg-attach img {
+				max-width: 260px;
+				max-height: 260px;
+				display: block;
+				cursor: pointer;
+				border: 1px solid #e3e6ea;
+			}
+
+			.msg-attach video,
+			.msg-attach audio {
+				max-width: 280px;
+				display: block;
+			}
+
+			.msg-attach .attach-pending {
+				width: 200px;
+				height: 120px;
+				background: #eef0f3;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #6c757d;
+				font-size: 0.8rem;
+			}
+
+			.msg-attach + .msg-attach {
+				margin-top: 0.35rem;
+			}
+
+			.msg-reply {
+				border-left: 3px solid #0057b8;
+				padding-left: 0.5rem;
+				margin-bottom: 0.35rem;
+				font-size: 0.8rem;
+				color: #495057;
+				opacity: 0.85;
+			}
+
+			#composer textarea {
+				resize: none;
+			}
+		</style>
+	</head>
+
+	<body class="d-flex flex-column h-100">
+		<%- include('../../../partials/header'); %>
+
+		<!-- ─── ХЛІБНІ КРИХТИ ─────────────────────────────────────────── -->
+		<div class="breadcrumbs pt-3 pb-3">
+			<div class="container-fluid">
+				<div class="row align-items-center">
+					<div class="col">
+						<span><%= data.conversation.contact_name || '—' %></span>
+						<div>
+							<ul class="list-inline mb-0">
+								<li class="list-inline-item">
+									<a href="/"><i class="fas fa-home"></i> <span><%= i18n.__('contact_center.dialog.breadcrumb.home') %></span></a>
+								</li>
+								<li class="list-inline-item">
+									<i class="fas fa-chevron-right"></i>
+									<a href="/contact-center/"><%= i18n.__('contact_center.dialog.breadcrumb.contact_center') %></a>
+								</li>
+								<li class="list-inline-item">
+									<i class="fas fa-chevron-right"></i>
+									<%= i18n.__('contact_center.dialog.breadcrumb.current') %>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-auto">
+						<a href="/contact-center/" class="btn btn-primary rounded-0"><i class="fa-solid fa-angle-left"></i></a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="container-fluid mt-3 h-100">
+			<div class="row h-100">
+				<!-- ═══ СТРІЧКА ═══ -->
+				<div class="col-12 col-lg-8 mb-3 d-flex flex-column">
+					<div class="card border-primary rounded-0 h-100 d-flex flex-column">
+						<!-- Шапка діалогу -->
+						<div class="card-header text-bg-primary rounded-0 d-flex align-items-center justify-content-between">
+							<span>
+								<i class="<%= data.meta.icon %> me-2"></i>
+								<%= data.conversation.contact_name || '—' %>
+								<% if (data.conversation.contact_username) { %>
+								<small class="ms-1">@<%= data.conversation.contact_username %></small>
+								<% } %>
+							</span>
+							<span class="badge text-bg-light rounded-0"><%= data.conversation.channel_name %></span>
+						</div>
+
+						<!-- Попередження, якщо канал вимкнено -->
+						<% if (Number(data.conversation.channel_active) !== 1) { %>
+						<div class="alert alert-warning rounded-0 mb-0 border-0 border-bottom">
+							<i class="fa-solid fa-plug-circle-xmark me-1"></i>
+							<%= i18n.__('contact_center.dialog.channel_inactive') %>
+						</div>
+						<% } %>
+
+						<!-- Повідомлення -->
+						<div class="flex-grow-1" style="position: relative; min-height: 420px">
+							<div id="feed" class="dialog-feed"></div>
+						</div>
+
+						<!-- Форма відправки -->
+						<div class="card-footer rounded-0 bg-white">
+							<form id="composer" autocomplete="off">
+								<div class="input-group">
+									<textarea class="form-control rounded-0" id="composer_text" rows="2" maxlength="4000" placeholder="<%= i18n.__('contact_center.dialog.placeholder') %>"></textarea>
+									<button class="btn btn-primary rounded-0" type="submit" id="btn_send">
+										<i class="fa-solid fa-paper-plane"></i>
+									</button>
+								</div>
+								<small class="text-muted"><%= i18n.__('contact_center.dialog.send_hint') %></small>
+							</form>
+						</div>
+					</div>
+				</div>
+
+				<!-- ═══ ПАНЕЛЬ СПІВРОЗМОВНИКА ═══ -->
+				<div class="col-12 col-lg-4 mb-3">
+					<div class="card border-primary rounded-0 mb-3">
+						<div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.dialog.contact') %></div>
+						<div class="card-body">
+							<dl class="row mb-0 small">
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_name') %></dt>
+								<dd class="col-7"><%= data.conversation.contact_name || '—' %></dd>
+
+								<% if (data.conversation.contact_username) { %>
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_username') %></dt>
+								<dd class="col-7">@<%= data.conversation.contact_username %></dd>
+								<% } %>
+
+								<% if (data.conversation.contact_phone) { %>
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_phone') %></dt>
+								<dd class="col-7"><%= data.conversation.contact_phone %></dd>
+								<% } %>
+
+								<% if (data.conversation.contact_email) { %>
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_email') %></dt>
+								<dd class="col-7"><%= data.conversation.contact_email %></dd>
+								<% } %>
+
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.channel') %></dt>
+								<dd class="col-7">
+									<i class="<%= data.meta.icon %> me-1" style="color: <%= data.meta.color %>"></i>
+									<%= data.conversation.channel_name %>
+								</dd>
+
+								<dt class="col-5"><%= i18n.__('contact_center.dialog.date_add') %></dt>
+								<dd class="col-7"><%= data.conversation.date_add %></dd>
+							</dl>
+						</div>
+					</div>
+
+					<div class="card border-primary rounded-0">
+						<div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.dialog.actions') %></div>
+						<div class="card-body d-grid gap-2">
+							<button type="button" class="btn btn-outline-primary rounded-0" id="btn_assign">
+								<span id="assign_label"></span>
+							</button>
+							<button type="button" class="btn btn-outline-success rounded-0 btn-status" data-status="resolved"><%= i18n.__('contact_center.dialog.resolve') %></button>
+							<button type="button" class="btn btn-outline-secondary rounded-0 btn-status" data-status="archived"><%= i18n.__('contact_center.dialog.archive') %></button>
+							<button type="button" class="btn btn-outline-primary rounded-0 btn-status" data-status="open"><%= i18n.__('contact_center.dialog.reopen') %></button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
+
+		<script src="/assets/js/notyf/notyf.min.js"></script>
+		<script>
+			const notyf = new Notyf({
+				position: { x: "right", y: "top" },
+				duration: 4000,
+				types: [
+					{ type: "success", dismissible: true, icon: false },
+					{ type: "error", background: "indianred", dismissible: true, icon: false },
+				],
+			});
+		</script>
+
+		<script>
+			// ================================================================
+			// КОНСТАНТИ
+			// ================================================================
+			const CONV_ID = <%= data.conversation.id %>;
+			const CURRENT_USER_ID = Number("<%= user.userId %>");
+			const isUk = "<%= i18n.__('lang_iso') %>" === "uk";
+
+			let convManagerId = <%= data.conversation.id_manager === null ? 'null' : data.conversation.id_manager %>;
+
+			const T = {
+				empty: "<%= i18n.__('contact_center.dialog.empty') %>",
+				loadError: "<%= i18n.__('contact_center.dialog.load_error') %>",
+				sendError: "<%= i18n.__('contact_center.dialog.send_error') %>",
+				failed: "<%= i18n.__('contact_center.dialog.failed') %>",
+				pending: "<%= i18n.__('contact_center.dialog.pending') %>",
+				attachLoading: "<%= i18n.__('contact_center.dialog.attach_loading') %>",
+				attachFailed: "<%= i18n.__('contact_center.dialog.attach_failed') %>",
+				take: "<%= i18n.__('contact_center.dialog.take') %>",
+				release: "<%= i18n.__('contact_center.dialog.release') %>",
+				takenByOther: "<%= i18n.__('contact_center.dialog.taken_by_other') %>",
+				today: "<%= i18n.__('contact_center.dialog.today') %>",
+				yesterday: "<%= i18n.__('contact_center.dialog.yesterday') %>",
+				saved: "<%= i18n.__('contact_center.dialog.saved') %>",
+				location: "<%= i18n.__('contact_center.dialog.location') %>",
+			};
+
+			function escapeHtml(str) {
+				return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
+					return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+				});
+			}
+
+			function parseDate(value) {
+				return new Date(String(value).replace(" ", "T"));
+			}
+		</script>
+
+		<script>
+			// ================================================================
+			// РЕНДЕР ПОВІДОМЛЕННЯ
+			// Канало-незалежний. type/subtype канонічні для всіх каналів,
+			// тому Discord чи Facebook не додають сюди жодної гілки.
+			// ================================================================
+			function renderAttachment(a) {
+				// Файл ще качається з каналу до нас
+				if (a.status === "pending" || a.status === "processing") {
+					return '<div class="msg-attach"><div class="attach-pending">' + T.attachLoading + "</div></div>";
+				}
+
+				if (a.status === "failed" || !a.path) {
+					return '<div class="msg-attach"><div class="attach-pending text-danger">' + T.attachFailed + "</div></div>";
+				}
+
+				const url = escapeHtml(a.path);
+				const name = escapeHtml(a.file_name || "");
+
+				if (a.type === "image" || a.type === "sticker") {
+					const src = a.thumb_path ? escapeHtml(a.thumb_path) : url;
+					return '<div class="msg-attach"><a href="' + url + '" target="_blank" rel="noopener"><img src="' + src + '" alt="' + name + '"></a></div>';
+				}
+
+				if (a.type === "video") {
+					return '<div class="msg-attach"><video src="' + url + '" controls preload="metadata"></video></div>';
+				}
+
+				if (a.type === "audio") {
+					return '<div class="msg-attach"><audio src="' + url + '" controls preload="metadata"></audio></div>';
+				}
+
+				const size = a.size ? " (" + Math.round(a.size / 1024) + " KB)" : "";
+				return '<div class="msg-attach"><a href="' + url + '" target="_blank" rel="noopener" class="d-inline-flex align-items-center gap-2">' + '<i class="fa-regular fa-file"></i><span>' + (name || url) + size + "</span></a></div>";
+			}
+
+			function renderMessage(m) {
+				// Системні — окремим рядком по центру
+				if (m.type === "system") {
+					return '<div class="msg-system" data-msg-id="' + m.id + '">' + escapeHtml(m.text || "") + "</div>";
+				}
+
+				const dir = m.direction === "out" ? "out" : "in";
+				const failed = m.status === "failed" ? " failed" : "";
+
+				let inner = "";
+
+				// Цитата
+				if (m.reply_text) {
+					inner += '<div class="msg-reply">' + escapeHtml(m.reply_text) + "</div>";
+				}
+
+				// Вкладення
+				if (m.attachments && m.attachments.length) {
+					m.attachments.forEach(function (a) {
+						inner += renderAttachment(a);
+					});
+				}
+
+				// Локація
+				if (m.type === "location" && m.lat && m.lng) {
+					const href = "https://www.google.com/maps?q=" + m.lat + "," + m.lng;
+					inner += '<div class="msg-attach"><a href="' + href + '" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot me-1"></i>' + T.location + "</a></div>";
+				}
+
+				// Текст
+				if (m.text) {
+					inner += "<div>" + escapeHtml(m.text) + "</div>";
+				}
+
+				// Метадані
+				const time = parseDate(m.date_add).toTimeString().slice(0, 5);
+				let meta = time;
+
+				if (dir === "out") {
+					if (m.manager_name) meta = escapeHtml(m.manager_name) + " · " + meta;
+					if (m.status === "pending") meta += ' <i class="fa-regular fa-clock" title="' + T.pending + '"></i>';
+					else if (m.status === "failed") meta += ' <i class="fa-solid fa-triangle-exclamation text-danger" title="' + escapeHtml(m.error || T.failed) + '"></i>';
+					else meta += ' <i class="fa-solid fa-check"></i>';
+				}
+
+				return '<div class="msg-row ' + dir + failed + '" data-msg-id="' + m.id + '">' + '<div><div class="msg-bubble">' + inner + '</div><div class="msg-meta">' + meta + "</div></div></div>";
+			}
+
+			function dayLabel(date) {
+				const now = new Date();
+				const d = new Date(date);
+
+				if (d.toDateString() === now.toDateString()) return T.today;
+
+				const yesterday = new Date(now.getTime() - 86400000);
+				if (d.toDateString() === yesterday.toDateString()) return T.yesterday;
+
+				return d.toLocaleDateString(isUk ? "uk-UA" : "en-US", { day: "2-digit", month: "long", year: "numeric" });
+			}
+		</script>
+
+		<script>
+			// ================================================================
+			// ЗАВАНТАЖЕННЯ СТРІЧКИ
+			// ================================================================
+			const feed = document.getElementById("feed");
+
+			let oldestId = null;
+			let hasMore = true;
+			let loading = false;
+			let lastDayKey = null;
+
+			// Вставка з розділювачами днів. prepend — для підвантаження історії вгору.
+			function appendMessages(messages, prepend) {
+				if (!messages.length) return;
+
+				let html = "";
+				let prevDay = prepend ? null : lastDayKey;
+
+				messages.forEach(function (m) {
+					const d = parseDate(m.date_add);
+					const key = d.toDateString();
+
+					if (key !== prevDay) {
+						html += '<div class="msg-day"><span>' + dayLabel(d) + "</span></div>";
+						prevDay = key;
+					}
+
+					html += renderMessage(m);
+				});
+
+				if (prepend) {
+					const before = feed.scrollHeight;
+					feed.insertAdjacentHTML("afterbegin", html);
+					// Тримаємо позицію прокрутки на місці після вставки історії
+					feed.scrollTop = feed.scrollHeight - before;
+				} else {
+					feed.insertAdjacentHTML("beforeend", html);
+					lastDayKey = prevDay;
+					feed.scrollTop = feed.scrollHeight;
+				}
+			}
+
+			async function loadMessages(before) {
+				if (loading || (before && !hasMore)) return;
+				loading = true;
+
+				try {
+					const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/messages/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ before: before || null, limit: 50 }),
+					});
+
+					const data = await res.json();
+					const messages = data.messages || [];
+
+					if (!before && !messages.length) {
+						feed.innerHTML = '<p class="text-center text-muted mt-4">' + T.empty + "</p>";
+						hasMore = false;
+						return;
+					}
+
+					if (messages.length) {
+						if (!oldestId || messages[0].id < oldestId) oldestId = messages[0].id;
+						appendMessages(messages, !!before);
+					}
+
+					hasMore = !!data.hasMore;
+				} catch (err) {
+					console.error("load messages:", err);
+					notyf.error(T.loadError);
+				} finally {
+					loading = false;
+				}
+			}
+
+			// Підвантаження історії при прокрутці вгору
+			feed.addEventListener("scroll", function () {
+				if (feed.scrollTop < 80 && hasMore && !loading) loadMessages(oldestId);
+			});
+
+			loadMessages(null);
+		</script>
+
+		<script>
+			// ================================================================
+			// ВІДПРАВКА
+			// ================================================================
+			const composer = document.getElementById("composer");
+			const composerText = document.getElementById("composer_text");
+
+			async function sendMessage() {
+				const text = composerText.value.trim();
+				if (!text) return;
+
+				const btn = document.getElementById("btn_send");
+				if (btn.disabled) return;
+
+				btn.disabled = true;
+				composerText.disabled = true;
+
+				try {
+					const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/send/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ text: text }),
+					});
+
+					const data = await res.json();
+
+					// Повідомлення записано в БД у будь-якому разі — показуємо його,
+					// навіть якщо канал відхилив відправку.
+					if (data.id_message) {
+						composerText.value = "";
+						appendMessages(
+							[
+								{
+									id: data.id_message,
+									direction: "out",
+									type: "text",
+									text: text,
+									status: data.status === "success" ? "sent" : "failed",
+									error: data.message,
+									date_add: data.date_add,
+									attachments: [],
+								},
+							],
+							false
+						);
+					}
+
+					if (data.status !== "success") notyf.error(data.message || T.sendError);
+				} catch (err) {
+					console.error("send:", err);
+					notyf.error(T.sendError);
+				} finally {
+					btn.disabled = false;
+					composerText.disabled = false;
+					composerText.focus();
+				}
+			}
+
+			composer.addEventListener("submit", function (e) {
+				e.preventDefault();
+				sendMessage();
+			});
+
+			// Enter — відправити, Shift+Enter — новий рядок
+			composerText.addEventListener("keydown", function (e) {
+				if (e.key === "Enter" && !e.shiftKey) {
+					e.preventDefault();
+					sendMessage();
+				}
+			});
+		</script>
+
+		<script>
+			// ================================================================
+			// ДІЇ НАД ДІАЛОГОМ
+			// ================================================================
+			function renderAssignButton() {
+				const btn = document.getElementById("btn_assign");
+				const label = document.getElementById("assign_label");
+
+				if (convManagerId === null) {
+					label.textContent = T.take;
+					btn.disabled = false;
+					btn.className = "btn btn-outline-primary rounded-0";
+				} else if (Number(convManagerId) === CURRENT_USER_ID) {
+					label.textContent = T.release;
+					btn.disabled = false;
+					btn.className = "btn btn-outline-secondary rounded-0";
+				} else {
+					label.textContent = T.takenByOther;
+					btn.disabled = true;
+					btn.className = "btn btn-outline-secondary rounded-0";
+				}
+			}
+
+			renderAssignButton();
+
+			document.getElementById("btn_assign").addEventListener("click", async function () {
+				const release = convManagerId !== null && Number(convManagerId) === CURRENT_USER_ID;
+
+				try {
+					const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/assign/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ release: release }),
+					});
+
+					const data = await res.json();
+					if (data.status !== "success") throw new Error();
+
+					convManagerId = data.id_manager;
+					renderAssignButton();
+					notyf.success(T.saved);
+				} catch (err) {
+					notyf.error(T.sendError);
+				}
+			});
+
+			document.querySelectorAll(".btn-status").forEach(function (btn) {
+				btn.addEventListener("click", async function () {
+					try {
+						const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/status/", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ status: this.dataset.status }),
+						});
+
+						const data = await res.json();
+						if (data.status !== "success") throw new Error();
+
+						notyf.success(T.saved);
+						setTimeout(function () {
+							window.location.href = "/contact-center/";
+						}, 700);
+					} catch (err) {
+						notyf.error(T.sendError);
+					}
+				});
+			});
+		</script>
+
+		<script>
+			// ================================================================
+			// SOCKET — вхідні повідомлення в цьому діалозі
+			// ================================================================
+			socket.emit("room", "io_conversation_" + CONV_ID);
+
+			socket.on("cc:message", function (data) {
+				if (!data || !data.message) return;
+				if (Number(data.conversation && data.conversation.id) !== CONV_ID) return;
+
+				// Своє вихідне вже намальовано локально
+				if (data.message.direction === "out" && Number(data.message.id_manager) === CURRENT_USER_ID) return;
+
+				if (document.querySelector('[data-msg-id="' + data.message.id + '"]')) return;
+
+				feed.querySelector("p.text-muted") && (feed.innerHTML = "");
+				appendMessages([data.message], false);
+			});
+
+			// Вкладення довантажилось — підміняємо заглушку
+			socket.on("cc:attachment_ready", function (data) {
+				if (!data || !data.id_message) return;
+
+				const row = document.querySelector('[data-msg-id="' + data.id_message + '"]');
+				if (!row) return;
+
+				const holders = row.querySelectorAll(".msg-attach");
+				const holder = holders[data.sort_order || 0];
+				if (holder) holder.outerHTML = renderAttachment(data.attachment);
+			});
+		</script>
+	</body>
+</html>

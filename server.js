@@ -50,7 +50,9 @@ app.use(
 				scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://code.jquery.com", "https://unpkg.com", "https://cdnjs.cloudflare.com", "https://cdn.socket.io", "'unsafe-inline'"],
 				styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
 				fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-				imgSrc: ["'self'", "data:"],
+				imgSrc: ["'self'", "data:", "blob:"],
+				mediaSrc: ["'self'", "blob:"],
+				connectSrc: ["'self'", "ws:", "wss:"],
 				connectSrc: ["'self'", "https://cdn.socket.io", "wss:", "ws:"],
 			},
 		},
@@ -90,6 +92,20 @@ app.use(compression());
 // ─── СТАТИЧНІ ФАЙЛИ ──────────────────────────────────
 const assetsPath = path.join(__dirname, "assets");
 app.use("/assets", express.static(assetsPath));
+
+// Вкладення контакт-центру
+app.use(
+	"/uploads",
+	express.static(path.join(__dirname, "public", "uploads"), {
+		maxAge: "7d",
+		// Файли приходять від сторонніх користувачів — віддаємо як завантаження,
+		// а не виконуємо в контексті домену
+		setHeaders: function (res) {
+			res.setHeader("X-Content-Type-Options", "nosniff");
+			res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+		},
+	})
+);
 
 // ─── COOKIES ТА CORS ─────────────────────────────────
 app.use(cookieParser());

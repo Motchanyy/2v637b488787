@@ -1,0 +1,64 @@
+<div class="mb-3">
+  <label for="f_token" class="form-label"><%= i18n.__('contact_center.channels.instagram.token') %></label>
+  <textarea class="form-control rounded-0" id="f_token" name="token" rows="3" autocomplete="off"
+            placeholder="<%= data.settings.has_token ? data.settings.token_mask : 'IGQVJ...' %>"></textarea>
+  <small class="text-muted">
+    <%= data.settings.has_token ? i18n.__('contact_center.channels.instagram.token_hint_change') : i18n.__('contact_center.channels.instagram.token_hint_new') %>
+  </small>
+</div>
+
+<% if (data.settings.ig_username) { %>
+<div class="row">
+  <div class="col-12 col-md-6 mb-3">
+    <label class="form-label"><%= i18n.__('contact_center.channels.instagram.username') %></label>
+    <input type="text" class="form-control rounded-0 bg-light" value="@<%= data.settings.ig_username %>" readonly />
+  </div>
+  <div class="col-12 col-md-6 mb-3">
+    <label class="form-label"><%= i18n.__('contact_center.channels.instagram.user_id') %></label>
+    <input type="text" class="form-control rounded-0 bg-light" value="<%= data.settings.ig_user_id || '' %>" readonly />
+  </div>
+</div>
+<% } %>
+
+<% if (data.settings.date_token_expires) { %>
+<div class="alert alert-info rounded-0">
+  <%= i18n.__('contact_center.channels.instagram.token_expires') %>: <strong><%= data.settings.date_token_expires %></strong>
+</div>
+<% } %>
+
+<div class="row">
+  <div class="col-12 col-md-6 mb-3">
+    <label for="f_app_id" class="form-label"><%= i18n.__('contact_center.channels.instagram.app_id') %></label>
+    <input type="text" class="form-control rounded-0" id="f_app_id" name="app_id" value="<%= data.settings.app_id || '' %>" />
+  </div>
+  <div class="col-12 col-md-6 mb-3">
+    <label class="form-label"><%= i18n.__('contact_center.channels.instagram.verify_token') %></label>
+    <div class="input-group">
+      <input type="text" class="form-control rounded-0 bg-light" id="f_verify_token" value="<%= data.settings.verify_token %>" readonly />
+      <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_verify_token">
+        <i class="fa-regular fa-copy"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="mb-0">
+  <label class="form-label"><%= i18n.__('contact_center.channels.instagram.webhook_url') %></label>
+  <div class="input-group">
+    <input type="text" class="form-control rounded-0 bg-light" id="f_webhook_url"
+           value="<%= data.appUrl %>/api/contact-center/webhook/instagram/" readonly />
+    <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_webhook_url">
+      <i class="fa-regular fa-copy"></i>
+    </button>
+  </div>
+  <small class="text-muted"><%= i18n.__('contact_center.channels.instagram.webhook_hint') %></small>
+</div>
+
+<script>
+  window.collectChannelFields = function () {
+    return {
+      token: document.getElementById("f_token").value.trim(),
+      app_id: document.getElementById("f_app_id").value.trim(),
+    };
+  };
+</script>

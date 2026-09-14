@@ -1,0 +1,113 @@
+<div class="row">
+  <div class="col-12 col-md-6 mb-3">
+    <label class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_key') %></label>
+    <div class="input-group">
+      <input type="text" class="form-control rounded-0 bg-light" id="f_widget_key" value="<%= data.settings.widget_key %>" readonly />
+      <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_widget_key">
+        <i class="fa-regular fa-copy"></i>
+      </button>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 mb-3">
+    <label for="f_allowed_origins" class="form-label"><%= i18n.__('contact_center.channels.webchat.allowed_origins') %></label>
+    <input type="text" class="form-control rounded-0" id="f_allowed_origins" name="allowed_origins" value="<%= data.settings.allowed_origins || '' %>" />
+    <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.allowed_origins_hint') %></small>
+  </div>
+</div>
+
+<hr />
+<h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.appearance') %></h6>
+
+<div class="row">
+  <div class="col-12 col-md-6 mb-3">
+    <label for="f_title" class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_title') %></label>
+    <input type="text" class="form-control rounded-0" id="f_title" name="title" value="<%= data.settings.title || '' %>" />
+  </div>
+  <div class="col-12 col-md-6 mb-3">
+    <label for="f_subtitle" class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_subtitle') %></label>
+    <input type="text" class="form-control rounded-0" id="f_subtitle" name="subtitle" value="<%= data.settings.subtitle || '' %>" />
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 col-md-4 mb-3">
+    <label for="f_color_primary" class="form-label"><%= i18n.__('contact_center.channels.webchat.color_primary') %></label>
+    <input type="color" class="form-control form-control-color rounded-0" id="f_color_primary" name="color_primary" value="<%= data.settings.color_primary %>" />
+  </div>
+  <div class="col-12 col-md-4 mb-3">
+    <label for="f_color_accent" class="form-label"><%= i18n.__('contact_center.channels.webchat.color_accent') %></label>
+    <input type="color" class="form-control form-control-color rounded-0" id="f_color_accent" name="color_accent" value="<%= data.settings.color_accent %>" />
+  </div>
+  <div class="col-12 col-md-4 mb-3">
+    <label for="f_position" class="form-label"><%= i18n.__('contact_center.channels.webchat.position') %></label>
+    <select class="form-select rounded-0" id="f_position" name="position">
+      <option value="right" <%= data.settings.position === 'right' ? 'selected' : '' %>><%= i18n.__('contact_center.channels.webchat.position_right') %></option>
+      <option value="left" <%= data.settings.position === 'left' ? 'selected' : '' %>><%= i18n.__('contact_center.channels.webchat.position_left') %></option>
+    </select>
+  </div>
+</div>
+
+<div class="mb-3">
+  <label for="f_welcome_message" class="form-label"><%= i18n.__('contact_center.channels.webchat.welcome_message') %></label>
+  <textarea class="form-control rounded-0" id="f_welcome_message" name="welcome_message" rows="2"><%= data.settings.welcome_message || '' %></textarea>
+</div>
+
+<div class="mb-3">
+  <label for="f_offline_message" class="form-label"><%= i18n.__('contact_center.channels.webchat.offline_message') %></label>
+  <textarea class="form-control rounded-0" id="f_offline_message" name="offline_message" rows="2"><%= data.settings.offline_message || '' %></textarea>
+</div>
+
+<hr />
+<h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.prechat') %></h6>
+
+<div class="row">
+  <div class="col-12 col-md-4">
+    <div class="form-check mb-2">
+      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_name" <%= Number(data.settings.require_name) === 1 ? 'checked' : '' %> />
+      <label class="form-check-label" for="f_require_name"><%= i18n.__('contact_center.channels.webchat.require_name') %></label>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="form-check mb-2">
+      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_email" <%= Number(data.settings.require_email) === 1 ? 'checked' : '' %> />
+      <label class="form-check-label" for="f_require_email"><%= i18n.__('contact_center.channels.webchat.require_email') %></label>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="form-check mb-2">
+      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_phone" <%= Number(data.settings.require_phone) === 1 ? 'checked' : '' %> />
+      <label class="form-check-label" for="f_require_phone"><%= i18n.__('contact_center.channels.webchat.require_phone') %></label>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<div class="mb-0">
+  <label class="form-label"><%= i18n.__('contact_center.channels.webchat.embed_code') %></label>
+  <div class="input-group">
+    <textarea class="form-control rounded-0 bg-light" id="f_embed_code" rows="3" readonly>&lt;script src="<%= data.appUrl %>/assets/js/webchat/widget.js" data-key="<%= data.settings.widget_key %>" async&gt;&lt;/script&gt;</textarea>
+    <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_embed_code">
+      <i class="fa-regular fa-copy"></i>
+    </button>
+  </div>
+  <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.embed_hint') %></small>
+</div>
+
+<script>
+  window.collectChannelFields = function () {
+    return {
+      allowed_origins: document.getElementById("f_allowed_origins").value.trim(),
+      title: document.getElementById("f_title").value,
+      subtitle: document.getElementById("f_subtitle").value,
+      color_primary: document.getElementById("f_color_primary").value,
+      color_accent: document.getElementById("f_color_accent").value,
+      position: document.getElementById("f_position").value,
+      welcome_message: document.getElementById("f_welcome_message").value,
+      offline_message: document.getElementById("f_offline_message").value,
+      require_name: document.getElementById("f_require_name").checked ? 1 : 0,
+      require_email: document.getElementById("f_require_email").checked ? 1 : 0,
+      require_phone: document.getElementById("f_require_phone").checked ? 1 : 0,
+    };
+  };
+</script>
