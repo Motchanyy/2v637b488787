@@ -1,8 +1,14 @@
 // Єдина точка розсилки подій контакт-центру.
 // Формат подій однаковий для всіх каналів — фронт не знає, звідки повідомлення.
 
+const { getIO } = require("../socket/socket");
+
 function io() {
-	return global.__io || null;
+	try {
+		return getIO() || null;
+	} catch (e) {
+		return null;
+	}
 }
 
 module.exports = {

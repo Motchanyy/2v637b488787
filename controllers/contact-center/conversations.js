@@ -58,8 +58,13 @@ const conversationsControllers = {
                     c.last_message_text, c.last_message_type, c.last_message_dir,
                     c.date_last_message,
                     ch.type AS channel, ch.name AS channel_name, ch.status AS channel_active,
-                    ct.name AS contact_name, ct.username AS contact_username, ct.avatar AS contact_avatar,
-                    COALESCE(ur.count, 0) AS count
+					ct.name AS contact_name, ct.username AS contact_username, ct.avatar AS contact_avatar,
+                    (SELECT COUNT(*)
+                       FROM ${P}contact_center_messages AS m
+                      WHERE m.id_conversation = c.id
+                        AND m.direction = 'in'
+                        AND m.id > COALESCE(ur.id_last_read_message, 0)
+                    ) AS count
                  FROM ${T_CONVS} AS c
                  INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
                  INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
@@ -108,7 +113,7 @@ const conversationsControllers = {
 		}
 	},
 
-		// ── Сторінка діалогу ──
+	// ── Сторінка діалогу ──
 	page: async (req, res) => {
 		const token = String(req.params.token || "");
 
@@ -277,7 +282,13 @@ const conversationsControllers = {
                         COUNT(*) AS total,
                         SUM(CASE WHEN c.id_manager = ? THEN 1 ELSE 0 END) AS mine,
                         SUM(CASE WHEN c.id_manager IS NULL THEN 1 ELSE 0 END) AS unassigned,
-                        COALESCE(SUM(ur.count), 0) AS unread
+                                                COALESCE(SUM(
+                            (SELECT COUNT(*)
+                               FROM ${P}contact_center_messages AS m
+                              WHERE m.id_conversation = c.id
+                                AND m.direction = 'in'
+                                AND m.id > COALESCE(ur.id_last_read_message, 0))
+                        ), 0) AS unread
                  FROM ${T_CONVS} AS c
                  INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
                  LEFT JOIN ${T_UNREAD} AS ur ON ur.id_conversation = c.id AND ur.id_manager = ?

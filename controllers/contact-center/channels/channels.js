@@ -2,6 +2,7 @@ const connection_pool = require("../../../config/database/connection_pool");
 const config = require("../../../config/config");
 const logging = require("../../../logging/logging");
 const types = require("./index");
+const ccNotifications = require("../notifications");
 
 const P = config.get("configDatabase").prefix;
 const TABLE = P + "contact_center_channels";
@@ -119,6 +120,7 @@ const channelsControllers = {
 			if (!type) return res.redirect("/contact-center/channels/");
 
 			const settings = await type.load(conn, id);
+			const recipients = await ccNotifications.list(id, req.user && req.user.id_lang);
 
 			res.render("pages/contact-center/channels/edit", {
 				i18n: res,
@@ -128,6 +130,7 @@ const channelsControllers = {
 					settings: settings,
 					meta: { code: type.code, label: type.label, icon: type.icon, color: type.color },
 					typeView: type.view,
+					recipients: recipients,
 					appUrl: config.get("configServer").url,
 				},
 				header: { navbar: "contact-center" },
@@ -172,6 +175,9 @@ const channelsControllers = {
 			await conn.beginTransaction();
 
 			const result = await type.save(conn, id, b, current);
+
+			// Отримувачі сповіщень — спільні для всіх типів каналів
+			await ccNotifications.save(conn, id, b.recipients);
 			const configured = result.configured ? 1 : 0;
 
 			// Увімкнути можна лише налаштований канал.
