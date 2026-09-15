@@ -183,6 +183,8 @@
 
 		<!-- Notyf -->
 		<script src="/assets/js/notyf/notyf.min.js"></script>
+		<!-- scheduler потребує jQuery, тому йде після partials/script -->
+		<script src="/assets/js/scheduler/scheduler.js"></script>
 		<script>
 			const notyf = new Notyf({
 				position: { x: "right", y: "top" },

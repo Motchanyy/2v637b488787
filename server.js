@@ -50,10 +50,11 @@ app.use(
 				scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://code.jquery.com", "https://unpkg.com", "https://cdnjs.cloudflare.com", "https://cdn.socket.io", "'unsafe-inline'"],
 				styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
 				fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-				imgSrc: ["'self'", "data:", "blob:"],
+				imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net"],
 				mediaSrc: ["'self'", "blob:"],
-				connectSrc: ["'self'", "ws:", "wss:"],
-				connectSrc: ["'self'", "https://cdn.socket.io", "wss:", "ws:"],
+				// emoji-mart тягне свої дані окремим запитом
+				connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"],
+				connectSrc: ["'self'", "https://cdn.socket.io", "https://cdn.jsdelivr.net", "wss:", "ws:"],
 			},
 		},
 	})

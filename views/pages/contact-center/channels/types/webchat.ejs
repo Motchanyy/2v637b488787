@@ -1,92 +1,15 @@
-<div class="row">
-  <div class="col-12 col-md-6 mb-3">
-    <label class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_key') %></label>
-    <div class="input-group">
-      <input type="text" class="form-control rounded-0 bg-light" id="f_widget_key" value="<%= data.settings.widget_key %>" readonly />
-      <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_widget_key">
-        <i class="fa-regular fa-copy"></i>
-      </button>
-    </div>
-  </div>
-  <div class="col-12 col-md-6 mb-3">
-    <label for="f_allowed_origins" class="form-label"><%= i18n.__('contact_center.channels.webchat.allowed_origins') %></label>
-    <input type="text" class="form-control rounded-0" id="f_allowed_origins" name="allowed_origins" value="<%= data.settings.allowed_origins || '' %>" />
-    <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.allowed_origins_hint') %></small>
-  </div>
-</div>
-
-<hr />
-<h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.appearance') %></h6>
-
-<div class="row">
-  <div class="col-12 col-md-6 mb-3">
-    <label for="f_title" class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_title') %></label>
-    <input type="text" class="form-control rounded-0" id="f_title" name="title" value="<%= data.settings.title || '' %>" />
-  </div>
-  <div class="col-12 col-md-6 mb-3">
-    <label for="f_subtitle" class="form-label"><%= i18n.__('contact_center.channels.webchat.widget_subtitle') %></label>
-    <input type="text" class="form-control rounded-0" id="f_subtitle" name="subtitle" value="<%= data.settings.subtitle || '' %>" />
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-12 col-md-4 mb-3">
-    <label for="f_color_primary" class="form-label"><%= i18n.__('contact_center.channels.webchat.color_primary') %></label>
-    <input type="color" class="form-control form-control-color rounded-0" id="f_color_primary" name="color_primary" value="<%= data.settings.color_primary %>" />
-  </div>
-  <div class="col-12 col-md-4 mb-3">
-    <label for="f_color_accent" class="form-label"><%= i18n.__('contact_center.channels.webchat.color_accent') %></label>
-    <input type="color" class="form-control form-control-color rounded-0" id="f_color_accent" name="color_accent" value="<%= data.settings.color_accent %>" />
-  </div>
-  <div class="col-12 col-md-4 mb-3">
-    <label for="f_position" class="form-label"><%= i18n.__('contact_center.channels.webchat.position') %></label>
-    <select class="form-select rounded-0" id="f_position" name="position">
-      <option value="right" <%= data.settings.position === 'right' ? 'selected' : '' %>><%= i18n.__('contact_center.channels.webchat.position_right') %></option>
-      <option value="left" <%= data.settings.position === 'left' ? 'selected' : '' %>><%= i18n.__('contact_center.channels.webchat.position_left') %></option>
-    </select>
-  </div>
-</div>
-
+<!-- Домени -->
 <div class="mb-3">
-  <label for="f_welcome_message" class="form-label"><%= i18n.__('contact_center.channels.webchat.welcome_message') %></label>
-  <textarea class="form-control rounded-0" id="f_welcome_message" name="welcome_message" rows="2"><%= data.settings.welcome_message || '' %></textarea>
+  <label for="f_allowed_origins" class="form-label"><%= i18n.__('contact_center.channels.webchat.allowed_origins') %></label>
+  <input type="text" class="form-control rounded-0" id="f_allowed_origins" name="allowed_origins" value="<%= data.settings.domains || '' %>" />
+  <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.allowed_origins_hint') %></small>
 </div>
 
+<!-- Код вставки -->
 <div class="mb-3">
-  <label for="f_offline_message" class="form-label"><%= i18n.__('contact_center.channels.webchat.offline_message') %></label>
-  <textarea class="form-control rounded-0" id="f_offline_message" name="offline_message" rows="2"><%= data.settings.offline_message || '' %></textarea>
-</div>
-
-<hr />
-<h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.prechat') %></h6>
-
-<div class="row">
-  <div class="col-12 col-md-4">
-    <div class="form-check mb-2">
-      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_name" <%= Number(data.settings.require_name) === 1 ? 'checked' : '' %> />
-      <label class="form-check-label" for="f_require_name"><%= i18n.__('contact_center.channels.webchat.require_name') %></label>
-    </div>
-  </div>
-  <div class="col-12 col-md-4">
-    <div class="form-check mb-2">
-      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_email" <%= Number(data.settings.require_email) === 1 ? 'checked' : '' %> />
-      <label class="form-check-label" for="f_require_email"><%= i18n.__('contact_center.channels.webchat.require_email') %></label>
-    </div>
-  </div>
-  <div class="col-12 col-md-4">
-    <div class="form-check mb-2">
-      <input class="form-check-input rounded-0" type="checkbox" value="1" id="f_require_phone" <%= Number(data.settings.require_phone) === 1 ? 'checked' : '' %> />
-      <label class="form-check-label" for="f_require_phone"><%= i18n.__('contact_center.channels.webchat.require_phone') %></label>
-    </div>
-  </div>
-</div>
-
-<hr />
-
-<div class="mb-0">
   <label class="form-label"><%= i18n.__('contact_center.channels.webchat.embed_code') %></label>
   <div class="input-group">
-    <textarea class="form-control rounded-0 bg-light" id="f_embed_code" rows="3" readonly>&lt;script src="<%= data.appUrl %>/assets/js/webchat/widget.js" data-key="<%= data.settings.widget_key %>" async&gt;&lt;/script&gt;</textarea>
+    <textarea class="form-control rounded-0 bg-light" id="f_embed_code" rows="2" readonly>&lt;script src="<%= data.appUrl %>/chat/widget.js" data-site-id="<%= data.settings.site_id || '' %>" async&gt;&lt;/script&gt;</textarea>
     <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_embed_code">
       <i class="fa-regular fa-copy"></i>
     </button>
@@ -94,20 +17,666 @@
   <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.embed_hint') %></small>
 </div>
 
+<hr />
+
+<!-- ═══ ВКЛАДКИ НАЛАШТУВАНЬ ВІДЖЕТА ═══ -->
+<ul class="nav nav-tabs mb-3" role="tablist">
+  <li class="nav-item"><button class="nav-link active rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-general" type="button"><%= i18n.__('contact_center.channels.webchat.tab_general') %></button></li>
+  <li class="nav-item"><button class="nav-link rounded-0" id="wc-tab-hours-btn" data-bs-toggle="tab" data-bs-target="#wc-tab-hours" type="button"><%= i18n.__('contact_center.channels.webchat.tab_hours') %></button></li>
+  <li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-texts" type="button"><%= i18n.__('contact_center.channels.webchat.tab_texts') %></button></li>
+  <li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-forms" type="button"><%= i18n.__('contact_center.channels.webchat.tab_forms') %></button></li>
+</ul>
+
+<div class="tab-content">
+  <!-- ── ЗАГАЛЬНЕ ── -->
+  <div class="tab-pane fade show active" id="wc-tab-general">
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.position') %></label>
+        <select class="form-select rounded-0" id="cfg-position">
+          <option value="right"><%= i18n.__('contact_center.channels.webchat.position_right') %></option>
+          <option value="left"><%= i18n.__('contact_center.channels.webchat.position_left') %></option>
+        </select>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.brand_color') %></label>
+        <input type="color" class="form-control form-control-color rounded-0" id="cfg-appearance-color" value="#007fff" />
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.primary_locale') %></label>
+        <select class="form-select rounded-0" id="cfg-locale-primary"></select>
+        <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.primary_locale_hint') %></small>
+      </div>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input rounded-0" type="checkbox" id="cfg-productcard" />
+      <label class="form-check-label" for="cfg-productcard"><%= i18n.__('contact_center.channels.webchat.product_card') %></label>
+    </div>
+
+    <hr />
+    <h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.greeting') %></h6>
+
+    <div class="form-check mb-2">
+      <input class="form-check-input rounded-0" type="checkbox" id="cfg-greeting-enabled" />
+      <label class="form-check-label" for="cfg-greeting-enabled"><%= i18n.__('contact_center.channels.webchat.greeting_enabled') %></label>
+    </div>
+
+    <div class="mb-3" style="max-width: 260px">
+      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.greeting_delay') %></label>
+      <input type="number" class="form-control rounded-0" id="cfg-greeting-delay" value="0" min="0" />
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <div class="fw-bold mb-2"><i class="fa-solid fa-desktop me-1"></i> <%= i18n.__('contact_center.channels.webchat.desktop') %></div>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-autoopen" />
+          <label class="form-check-label" for="cfg-greeting-desktop-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-sound" />
+          <label class="form-check-label" for="cfg-greeting-desktop-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="fw-bold mb-2"><i class="fa-solid fa-mobile-screen me-1"></i> <%= i18n.__('contact_center.channels.webchat.mobile') %></div>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-autoopen" />
+          <label class="form-check-label" for="cfg-greeting-mobile-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-sound" />
+          <label class="form-check-label" for="cfg-greeting-mobile-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
+        </div>
+      </div>
+    </div>
+    <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.auto_open_hint') %></small>
+  </div>
+
+  <!-- ── ГОДИНИ ── -->
+  <div class="tab-pane fade" id="wc-tab-hours">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.timezone') %></label>
+        <select class="form-select rounded-0" id="cfg-hours-tz">
+          <option value="Europe/Kyiv">Europe/Kyiv</option>
+          <option value="Europe/Warsaw">Europe/Warsaw</option>
+          <option value="Europe/London">Europe/London</option>
+          <option value="Europe/Berlin">Europe/Berlin</option>
+          <option value="UTC">UTC</option>
+        </select>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.force_mode') %></label>
+        <select class="form-select rounded-0" id="cfg-hours-force">
+          <option value="auto"><%= i18n.__('contact_center.channels.webchat.force_auto') %></option>
+          <option value="online"><%= i18n.__('contact_center.channels.webchat.force_online') %></option>
+          <option value="offline"><%= i18n.__('contact_center.channels.webchat.force_offline') %></option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.schedule') %></label>
+      <table id="wcs-scheduler" class="scheduler"></table>
+      <div class="alert alert-info rounded-0 mt-2 small mb-0"><%= i18n.__('contact_center.channels.webchat.schedule_hint') %></div>
+    </div>
+
+    <div class="mb-0">
+      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.holidays') %></label>
+      <textarea class="form-control rounded-0" id="cfg-holidays" rows="4" placeholder="2026-01-01&#10;2026-12-25"></textarea>
+      <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.holidays_hint') %></small>
+    </div>
+  </div>
+
+  <!-- ── ТЕКСТИ ── -->
+  <div class="tab-pane fade" id="wc-tab-texts">
+    <div class="mb-3">
+      <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.locales') %></label>
+      <div id="cfg-locale-list" class="row"></div>
+    </div>
+
+    <hr />
+    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.header_title') %></label>
+    <div id="cfg-header-langs" class="row mb-3"></div>
+
+    <hr />
+    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.greeting_texts') %></label>
+    <div id="cfg-greeting-langs" class="row mb-3"></div>
+
+    <hr />
+    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.system_strings') %></label>
+    <div id="cfg-strings" class="row mb-3"></div>
+
+    <hr />
+    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.ui_strings') %></label>
+    <div id="cfg-ui" class="row mb-0"></div>
+  </div>
+
+  <!-- ── ФОРМИ І ТРИГЕРИ ── -->
+  <div class="tab-pane fade" id="wc-tab-forms">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <label class="form-label fw-bold mb-0"><%= i18n.__('contact_center.channels.webchat.forms') %></label>
+      <button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="cfg-form-add">
+        <i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.form_add') %>
+      </button>
+    </div>
+    <div id="cfg-forms-list" class="row mb-3"></div>
+
+    <hr />
+    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.triggers') %></label>
+    <div class="alert alert-info rounded-0 small"><%= i18n.__('contact_center.channels.webchat.triggers_hint') %></div>
+    <div id="cfg-triggers"></div>
+  </div>
+</div>
+
+<!-- ═══ МОДАЛКА РЕДАКТОРА ФОРМИ ═══ -->
+<div class="modal fade" id="form-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content rounded-0">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="form-modal-title"><%= i18n.__('contact_center.channels.webchat.form') %></h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="form-orig-id" />
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_id') %></label>
+            <input type="text" class="form-control rounded-0" id="form-id" placeholder="contact" />
+            <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.form_id_hint') %></small>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_target') %></label>
+            <select class="form-select rounded-0" id="form-target">
+              <option value="lead"><%= i18n.__('contact_center.channels.webchat.form_target_lead') %></option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0"><%= i18n.__('contact_center.channels.webchat.form_fields') %></h6>
+          <button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="form-field-add">
+            <i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.field_add') %>
+          </button>
+        </div>
+        <div id="form-fields"></div>
+        <hr />
+        <div class="mb-0">
+          <label class="form-label"><%= i18n.__('contact_center.channels.webchat.require_any') %></label>
+          <div id="form-requireany" class="border rounded-0 p-2"></div>
+          <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.require_any_hint') %></small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-0" data-bs-dismiss="modal"><%= i18n.__('contact_center.channels.webchat.close') %></button>
+        <button type="button" class="btn btn-primary rounded-0" id="form-save"><%= i18n.__('contact_center.channels.webchat.form_save') %></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-  window.collectChannelFields = function () {
-    return {
-      allowed_origins: document.getElementById("f_allowed_origins").value.trim(),
-      title: document.getElementById("f_title").value,
-      subtitle: document.getElementById("f_subtitle").value,
-      color_primary: document.getElementById("f_color_primary").value,
-      color_accent: document.getElementById("f_color_accent").value,
-      position: document.getElementById("f_position").value,
-      welcome_message: document.getElementById("f_welcome_message").value,
-      offline_message: document.getElementById("f_offline_message").value,
-      require_name: document.getElementById("f_require_name").checked ? 1 : 0,
-      require_email: document.getElementById("f_require_email").checked ? 1 : 0,
-      require_phone: document.getElementById("f_require_phone").checked ? 1 : 0,
-    };
-  };
+	// ================================================================
+	// РЕДАКТОР КОНФІГУ ВІДЖЕТА
+	//
+	// Конфіг — це JSON у web_chat_sites.config. Сервер валідує його
+	// через validateConfig(), тому структуру треба зберігати точно.
+	//
+	// Партіал рендериться всередині body, до підключення jQuery,
+	// тому ініціалізація чекає на появу плагіна scheduler.
+	// ================================================================
+
+	let wcsConfig = <%- JSON.stringify(data.settings.config || {}) %>;
+	let wcsSchedulerReady = false;
+	let formModal, editingFieldsState = [], editingRequireAny = [];
+
+	function cfgGet(obj, path, def) {
+		return path.split(".").reduce((o, k) => (o && o[k] != null ? o[k] : undefined), obj) ?? def;
+	}
+	function cfgSet(obj, path, val) {
+		const keys = path.split("."); let o = obj;
+		for (let i = 0; i < keys.length - 1; i++) { if (typeof o[keys[i]] !== "object" || o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
+		o[keys[keys.length - 1]] = val;
+	}
+
+	// Збір даних не залежить від scheduler: якщо плагін не завантажиться,
+	// решта налаштувань усе одно має зберігатися.
+	window.collectChannelFields = function () {
+		const cfg = wcsConfig || {};
+		if (!cfg.version) cfg.version = 1;
+
+		if (typeof window.collectWidgetConfig === "function") window.collectWidgetConfig(cfg);
+
+		return {
+			allowed_origins: document.getElementById("f_allowed_origins").value.trim(),
+			widget_config: cfg,
+		};
+	};
+
+	let schedulerWaitTries = 0;
+
+	(function waitForScheduler() {
+		if (typeof $ === "undefined" || !$.fn || !$.fn.scheduler) {
+			if (++schedulerWaitTries > 100) {
+				console.error("scheduler.js не завантажився — редактор годин недоступний");
+				return;
+			}
+			return setTimeout(waitForScheduler, 50);
+		}
+
+		$.fn.scheduler.locales["uk-UA"] = {
+			AM: "ДП", PM: "ПП", TIME_TITLE: "ЧАС", WEEK_TITLE: "ДЕНЬ",
+			WEEK_DAYS: ["ПОНЕДІЛОК", "ВІВТОРОК", "СЕРЕДА", "ЧЕТВЕР", "П'ЯТНИЦЯ", "СУБОТА", "НЕДІЛЯ"],
+			DRAG_TIP: "Перетягніть, щоб вибрати години", RESET: "Скинути вибране",
+		};
+
+		const WC_LANGS = [
+			{ code: "uk", name: "Українська" }, { code: "en", name: "English" }, { code: "pl", name: "Polski" },
+			{ code: "de", name: "Deutsch" }, { code: "fr", name: "Français" }, { code: "es", name: "Español" },
+			{ code: "it", name: "Italiano" }, { code: "pt", name: "Português" }, { code: "nl", name: "Nederlands" },
+			{ code: "cs", name: "Čeština" }, { code: "sk", name: "Slovenčina" }, { code: "ro", name: "Română" },
+			{ code: "bg", name: "Български" }, { code: "hu", name: "Magyar" }, { code: "el", name: "Ελληνικά" },
+			{ code: "tr", name: "Türkçe" }, { code: "sv", name: "Svenska" }, { code: "da", name: "Dansk" },
+			{ code: "fi", name: "Suomi" }, { code: "no", name: "Norsk" }, { code: "lt", name: "Lietuvių" },
+			{ code: "lv", name: "Latviešu" }, { code: "et", name: "Eesti" }, { code: "sl", name: "Slovenščina" },
+			{ code: "hr", name: "Hrvatski" }, { code: "sr", name: "Srpski" }, { code: "ka", name: "ქართული" },
+			{ code: "az", name: "Azərbaycan" }, { code: "kk", name: "Қазақ" }, { code: "ar", name: "العربية" },
+			{ code: "he", name: "עברית" }, { code: "zh", name: "中文" }, { code: "ja", name: "日本語" },
+			{ code: "ko", name: "한국어" }, { code: "hi", name: "हिन्दी" }, { code: "th", name: "ไทย" },
+			{ code: "vi", name: "Tiếng Việt" }, { code: "id", name: "Indonesia" },
+		];
+
+		const langName = (code) => { const l = WC_LANGS.find((x) => x.code === code); return l ? l.name : code; };
+		const escAttr = (s) => (s + "").replace(/"/g, "&quot;");
+
+		// ── Розклад: [[9,18]] ↔ [9,10,...,17] ──
+		function scheduleToScheduler(sched) {
+			const out = {}; sched = sched || {};
+			Object.keys(sched).forEach((day) => {
+				const hours = [];
+				(sched[day] || []).forEach((r) => { for (let h = r[0]; h < r[1]; h++) hours.push(h); });
+				if (hours.length) out[day] = hours;
+			});
+			return out;
+		}
+		function schedulerToSchedule(val) {
+			const out = {}; val = val || {};
+			Object.keys(val).forEach((day) => {
+				const hours = (val[day] || []).slice().sort((a, b) => a - b);
+				if (!hours.length) return;
+				const ranges = []; let start = hours[0], prev = hours[0];
+				for (let i = 1; i < hours.length; i++) {
+					if (hours[i] === prev + 1) prev = hours[i];
+					else { ranges.push([start, prev + 1]); start = hours[i]; prev = hours[i]; }
+				}
+				ranges.push([start, prev + 1]);
+				out[day] = ranges;
+			});
+			return out;
+		}
+
+		// ── Мови ──
+		function getEnabledLangs() {
+			return Array.from(document.querySelectorAll(".cfg-lang:checked")).map((c) => c.value);
+		}
+		function syncPrimarySelect(preferred) {
+			const sel = document.getElementById("cfg-locale-primary");
+			const prev = preferred || sel.value;
+			const en = getEnabledLangs();
+			sel.innerHTML = en.map((code) => `<option value="${code}">${langName(code)} (${code})</option>`).join("");
+			if (en.includes(prev)) sel.value = prev;
+			else if (en.length) sel.value = en[0];
+		}
+		function onLangsChanged() {
+			syncPrimarySelect(); renderHeaderLangs(); renderGreetingLangs(); renderTriggers(); renderStringsUi();
+		}
+		function renderLocaleUI(enabled, primary) {
+			enabled = enabled || [];
+			const listEl = document.getElementById("cfg-locale-list");
+			listEl.innerHTML = WC_LANGS.map((l) => {
+				const checked = enabled.includes(l.code) ? "checked" : "";
+				return `<div class="col-6 col-md-4 col-lg-3"><div class="form-check">
+					<input class="form-check-input rounded-0 cfg-lang" type="checkbox" id="cfg-lang-${l.code}" value="${l.code}" ${checked}>
+					<label class="form-check-label" for="cfg-lang-${l.code}">${l.name} <span class="text-muted">(${l.code})</span></label>
+				</div></div>`;
+			}).join("");
+
+			listEl.querySelectorAll(".cfg-lang").forEach((cb) => {
+				cb.addEventListener("change", function () {
+					if (getEnabledLangs().length === 0) { this.checked = true; notyf.error("Має бути хоча б одна мова"); return; }
+					onLangsChanged();
+				});
+			});
+			syncPrimarySelect(primary);
+		}
+
+		// ── Мультимовні поля ──
+		function multiLangInputs(dataAttr, basePath) {
+			return getEnabledLangs().map((code) => {
+				const v = escAttr(cfgGet(wcsConfig, basePath + "." + code, ""));
+				return `<div class="input-group input-group-sm mb-1"><span class="input-group-text rounded-0">${code}</span>
+					<input type="text" class="form-control rounded-0" ${dataAttr}="${basePath}.${code}" value="${v}"></div>`;
+			}).join("");
+		}
+		function saveDomInto(selector, attr) {
+			document.querySelectorAll(selector).forEach((t) => cfgSet(wcsConfig, t.getAttribute(attr), t.value));
+		}
+
+		function renderHeaderLangs() {
+			const box = document.getElementById("cfg-header-langs");
+			saveDomInto("#cfg-header-langs input[data-hkey]", "data-hkey");
+			box.innerHTML = getEnabledLangs().map((code) => `<div class="col-md-6 col-lg-4 mb-2">
+				<label class="form-label mb-1">${langName(code)} <span class="text-muted">(${code})</span></label>
+				<input type="text" class="form-control rounded-0" data-hkey="appearance.headerTitle.${code}" value="${escAttr(cfgGet(wcsConfig, "appearance.headerTitle." + code, ""))}">
+			</div>`).join("");
+		}
+
+		function renderGreetingLangs() {
+			const box = document.getElementById("cfg-greeting-langs");
+			saveDomInto("#cfg-greeting-langs textarea[data-gkey]", "data-gkey");
+			box.innerHTML = getEnabledLangs().map((code) => `<div class="col-md-6 col-lg-4 mb-3"><div class="border rounded-0 p-2 h-100">
+				<div class="fw-bold mb-2">${langName(code)} <span class="text-muted">(${code})</span></div>
+				<div class="mb-2"><label class="form-label mb-1 small">Робоче</label>
+					<textarea class="form-control rounded-0" rows="2" data-gkey="greeting.working.${code}">${cfgGet(wcsConfig, "greeting.working." + code, "")}</textarea></div>
+				<div class="mb-2"><label class="form-label mb-1 small">Офлайн</label>
+					<textarea class="form-control rounded-0" rows="2" data-gkey="greeting.offline.${code}">${cfgGet(wcsConfig, "greeting.offline." + code, "")}</textarea></div>
+				<div class="mb-0"><label class="form-label mb-1 small">Офлайн-підтвердження</label>
+					<textarea class="form-control rounded-0" rows="2" data-gkey="greeting.offlineAck.${code}">${cfgGet(wcsConfig, "greeting.offlineAck." + code, "")}</textarea></div>
+			</div></div>`).join("");
+		}
+
+		const TEXT_GROUPS = [
+			{ box: "cfg-strings", defs: [
+				{ key: "strings.sendFailed", label: "Помилка надсилання" },
+				{ key: "strings.rateLimited", label: "Забагато повідомлень" },
+				{ key: "strings.leadNeedContact", label: "Потрібен контакт" },
+			]},
+			{ box: "cfg-ui", defs: [
+				{ key: "ui.leadDone", label: "Контакт залишено" },
+				{ key: "ui.leadDismissed", label: "Форму згорнуто" },
+				{ key: "ui.inputPlaceholder", label: "Плейсхолдер вводу" },
+			]},
+		];
+		function renderStringsUi() {
+			TEXT_GROUPS.forEach((g) => {
+				const box = document.getElementById(g.box);
+				saveDomInto("#" + g.box + " input[data-tkey]", "data-tkey");
+				box.innerHTML = g.defs.map((d) => `<div class="col-md-6 col-lg-4 mb-3">
+					<label class="form-label mb-1 fw-bold">${d.label}</label>${multiLangInputs("data-tkey", d.key)}</div>`).join("");
+			});
+		}
+		function collectTextGroups(cfg) {
+			document.querySelectorAll("#cfg-strings input[data-tkey], #cfg-ui input[data-tkey]").forEach((t) => {
+				cfgSet(cfg, t.getAttribute("data-tkey"), t.value);
+			});
+		}
+
+		// ── Тригери ──
+		const TRIGGERS = [
+			{ path: "triggers.autoForm.working", title: "Авто-форма (робочий час)", hasForm: true, hasAfter: true },
+			{ path: "triggers.autoForm.offline", title: "Авто-форма (офлайн)", hasForm: true, hasAfter: true },
+			{ path: "triggers.onFirstMessage.working", title: "Після першого повідомлення (робочий час)", hasForm: true, hasAfter: true },
+			{ path: "triggers.onFirstMessage.offline", title: "Після першого повідомлення (офлайн)", hasForm: true, hasAfter: true },
+			{ path: "triggers.onOperatorTimeout", title: "Оператор не відповів", hasForm: true, hasAfter: true },
+			{ path: "triggers.afterClose.review", title: "Оцінка після закриття", hasForm: false, hasAfter: false },
+		];
+		function formIdOptions(selected) {
+			return '<option value="">— оберіть форму —</option>' + Object.keys(getForms()).map((id) =>
+				`<option value="${id}" ${selected === id ? "selected" : ""}>${id}</option>`).join("");
+		}
+		function renderTriggers() {
+			const box = document.getElementById("cfg-triggers");
+			document.querySelectorAll(".trg-msg").forEach((t) => cfgSet(wcsConfig, t.getAttribute("data-path") + ".message." + t.getAttribute("data-lang"), t.value));
+
+			box.innerHTML = TRIGGERS.map((tr, ti) => {
+				const enabled = !!cfgGet(wcsConfig, tr.path + ".enabled", false);
+				const formId = cfgGet(wcsConfig, tr.path + ".formId", "");
+				const afterSec = cfgGet(wcsConfig, tr.path + ".afterSec", 0);
+				const msgInputs = getEnabledLangs().map((code) => {
+					const v = (cfgGet(wcsConfig, tr.path + ".message." + code, "") + "").replace(/</g, "&lt;");
+					return `<div class="col-md-6 mb-2"><div class="input-group input-group-sm">
+						<span class="input-group-text rounded-0">${code}</span>
+						<textarea class="form-control rounded-0 trg-msg" data-path="${tr.path}" data-lang="${code}" rows="2">${v}</textarea></div></div>`;
+				}).join("");
+				const formSelect = tr.hasForm ? `<div class="col-md-6 mb-2"><label class="form-label mb-1 small">Форма</label>
+					<select class="form-select form-select-sm rounded-0 trg-form" data-path="${tr.path}">${formIdOptions(formId)}</select></div>` : "";
+				const afterInput = tr.hasAfter ? `<div class="col-md-6 mb-2"><label class="form-label mb-1 small">Затримка (сек)</label>
+					<input type="number" min="0" class="form-control form-control-sm rounded-0 trg-after" data-path="${tr.path}" value="${afterSec}"></div>` : "";
+				return `<div class="border rounded-0 p-3 mb-3">
+					<div class="form-check form-switch mb-2">
+						<input class="form-check-input trg-enabled" type="checkbox" data-path="${tr.path}" id="trg-en-${ti}" ${enabled ? "checked" : ""}>
+						<label class="form-check-label fw-bold" for="trg-en-${ti}">${tr.title}</label></div>
+					<div class="row">${formSelect}${afterInput}</div>
+					<label class="form-label mb-1 small">Текст перед формою (по мовах)</label>
+					<div class="row">${msgInputs}</div></div>`;
+			}).join("");
+		}
+		function collectTriggers(cfg) {
+			TRIGGERS.forEach((tr) => {
+				const enCb = document.querySelector('.trg-enabled[data-path="' + tr.path + '"]');
+				if (enCb) cfgSet(cfg, tr.path + ".enabled", enCb.checked);
+				if (tr.hasForm) { const fs = document.querySelector('.trg-form[data-path="' + tr.path + '"]'); if (fs) cfgSet(cfg, tr.path + ".formId", fs.value); }
+				if (tr.hasAfter) { const af = document.querySelector('.trg-after[data-path="' + tr.path + '"]'); if (af) cfgSet(cfg, tr.path + ".afterSec", parseInt(af.value, 10) || 0); }
+				document.querySelectorAll('.trg-msg[data-path="' + tr.path + '"]').forEach((t) => {
+					cfgSet(cfg, tr.path + ".message." + t.getAttribute("data-lang"), t.value);
+				});
+			});
+		}
+
+		// ── Форми ──
+		const FIELD_TYPES = [
+			{ v: "text", n: "Текст" }, { v: "email", n: "Email" }, { v: "tel", n: "Телефон" },
+			{ v: "textarea", n: "Багаторядковий" }, { v: "select", n: "Список" }, { v: "checkbox", n: "Чекбокс" },
+		];
+		function getForms() { return cfgGet(wcsConfig, "forms", {}) || {}; }
+
+		function renderFormsList() {
+			const forms = getForms();
+			const box = document.getElementById("cfg-forms-list");
+			const ids = Object.keys(forms);
+			box.innerHTML = ids.length ? ids.map((fid) => {
+				const f = forms[fid] || {};
+				const names = (f.fields || []).map((x) => x.name).join(", ");
+				return `<div class="col-md-6 col-lg-4 mb-3"><div class="border rounded-0 p-3 h-100">
+					<div class="d-flex justify-content-between align-items-start">
+						<div><div class="fw-bold">${fid}</div><div class="small text-muted">${(f.fields || []).length} пол. · ${names || "—"}</div></div>
+						<div class="text-nowrap">
+							<button type="button" class="btn btn-sm btn-primary rounded-0" data-form-edit="${fid}"><i class="fa-regular fa-pen-to-square"></i></button>
+							<button type="button" class="btn btn-sm btn-outline-danger rounded-0" data-form-del="${fid}"><i class="fa-regular fa-trash-can"></i></button>
+						</div></div></div></div>`;
+			}).join("") : '<div class="col-12 text-muted">Форм ще немає.</div>';
+
+			box.querySelectorAll("[data-form-edit]").forEach((b) => { b.onclick = function () { openFormEditor(this.getAttribute("data-form-edit")); }; });
+			box.querySelectorAll("[data-form-del]").forEach((b) => {
+				b.onclick = function () {
+					const fid = this.getAttribute("data-form-del");
+					if (!confirm("Видалити форму «" + fid + "»?")) return;
+					const forms = getForms(); delete forms[fid]; cfgSet(wcsConfig, "forms", forms);
+					renderFormsList(); renderTriggers();
+				};
+			});
+		}
+
+		function optionsToText(opts) {
+			if (!Array.isArray(opts)) return "";
+			const primary = getEnabledLangs()[0] || "uk";
+			return opts.map((o) => {
+				const lbl = (o.label && (o.label[primary] || Object.values(o.label)[0])) || o.value || "";
+				return o.value + "|" + lbl;
+			}).join("\n");
+		}
+		function textToOptions(text) {
+			const langs = getEnabledLangs();
+			return String(text || "").split("\n").map((line) => {
+				const t = line.trim(); if (!t) return null;
+				const parts = t.split("|"); const value = parts[0].trim(); const lbl = (parts[1] || parts[0]).trim();
+				if (!value) return null;
+				const label = {}; langs.forEach((c) => { label[c] = lbl; });
+				return { value: value, label: label };
+			}).filter(Boolean);
+		}
+
+		function fieldRowHtml(idx, fld) {
+			const typeOpts = FIELD_TYPES.map((t) => `<option value="${t.v}" ${fld.type === t.v ? "selected" : ""}>${t.n}</option>`).join("");
+			const labelInputs = getEnabledLangs().map((code) => {
+				const val = (fld.label && fld.label[code]) ? escAttr(fld.label[code]) : "";
+				return `<div class="col-md-6 mb-1"><div class="input-group input-group-sm">
+					<span class="input-group-text rounded-0">${code}</span>
+					<input type="text" class="form-control rounded-0 fld-label" data-lang="${code}" value="${val}" placeholder="Підпис"></div></div>`;
+			}).join("");
+			const isSelect = fld.type === "select";
+			return `<div class="border rounded-0 p-2 mb-2 fld-row" data-idx="${idx}">
+				<div class="row g-2 align-items-end">
+					<div class="col-md-3"><label class="form-label mb-1 small">Ключ (name)</label>
+						<input type="text" class="form-control form-control-sm rounded-0 fld-name" value="${escAttr(fld.name || "")}" placeholder="email"></div>
+					<div class="col-md-3"><label class="form-label mb-1 small">Тип</label>
+						<select class="form-select form-select-sm rounded-0 fld-type">${typeOpts}</select></div>
+					<div class="col-md-3"><div class="form-check mt-4">
+						<input class="form-check-input rounded-0 fld-required" type="checkbox" ${fld.required ? "checked" : ""} id="fld-req-${idx}">
+						<label class="form-check-label small" for="fld-req-${idx}">Обовʼязкове</label></div></div>
+					<div class="col-md-3 text-end"><button type="button" class="btn btn-sm btn-outline-danger rounded-0 fld-del"><i class="fa-regular fa-trash-can"></i></button></div>
+				</div>
+				<div class="row mt-2"><div class="col-12"><label class="form-label mb-1 small">Підпис (по мовах)</label></div>${labelInputs}</div>
+				<div class="fld-options mt-2" style="${isSelect ? "" : "display:none"}">
+					<label class="form-label mb-1 small">Варіанти (value|підпис, по одному в рядку)</label>
+					<textarea class="form-control rounded-0 fld-options-text" rows="3" placeholder="new|Новий">${optionsToText(fld.options)}</textarea></div>
+			</div>`;
+		}
+
+		function syncEditingFromDom() {
+			const arr = [];
+			document.querySelectorAll("#form-fields .fld-row").forEach((row) => {
+				const type = row.querySelector(".fld-type").value;
+				const name = row.querySelector(".fld-name").value.trim();
+				const label = {};
+				row.querySelectorAll(".fld-label").forEach((inp) => { const v = inp.value.trim(); if (v) label[inp.getAttribute("data-lang")] = v; });
+				const fld = { name: name, type: type, label: label };
+				if (row.querySelector(".fld-required").checked) fld.required = true;
+				if (type === "select") {
+					const ta = row.querySelector(".fld-options-text");
+					const opts = textToOptions(ta ? ta.value : "");
+					if (opts.length) fld.options = opts;
+				}
+				arr.push(fld);
+			});
+			editingFieldsState = arr;
+		}
+		function renderEditingFields() {
+			const box = document.getElementById("form-fields");
+			box.innerHTML = editingFieldsState.map((fld, i) => fieldRowHtml(i, fld)).join("");
+			box.querySelectorAll(".fld-row").forEach((row) => {
+				const idx = parseInt(row.getAttribute("data-idx"), 10);
+				row.querySelector(".fld-type").addEventListener("change", function () { syncEditingFromDom(); editingFieldsState[idx].type = this.value; renderEditingFields(); renderRequireAny(); });
+				row.querySelector(".fld-del").addEventListener("click", function () { syncEditingFromDom(); editingFieldsState.splice(idx, 1); renderEditingFields(); renderRequireAny(); });
+				row.querySelector(".fld-name").addEventListener("input", renderRequireAny);
+			});
+		}
+		function renderRequireAny() {
+			syncEditingFromDom();
+			const box = document.getElementById("form-requireany");
+			const names = editingFieldsState.map((f) => f.name).filter(Boolean);
+			if (!names.length) { box.innerHTML = '<span class="text-muted small">Спершу додайте поля.</span>'; return; }
+			box.innerHTML = names.map((n) => `<div class="form-check form-check-inline">
+				<input class="form-check-input rounded-0 req-any" type="checkbox" value="${n}" id="reqany-${n}">
+				<label class="form-check-label" for="reqany-${n}">${n}</label></div>`).join("");
+			(editingRequireAny || []).forEach((n) => { const cb = box.querySelector('.req-any[value="' + n + '"]'); if (cb) cb.checked = true; });
+		}
+		function openFormEditor(formId) {
+			const f = formId ? (getForms()[formId] || {}) : {};
+			document.getElementById("form-orig-id").value = formId || "";
+			document.getElementById("form-modal-title").textContent = formId ? ("Форма: " + formId) : "Нова форма";
+			document.getElementById("form-id").value = formId || "";
+			document.getElementById("form-target").value = f.target || "lead";
+			editingFieldsState = JSON.parse(JSON.stringify(f.fields || []));
+			editingRequireAny = Array.isArray(f.requireAnyOf) ? f.requireAnyOf.slice() : [];
+			renderEditingFields(); renderRequireAny();
+			formModal.show();
+		}
+
+		document.getElementById("cfg-form-add").onclick = function () { openFormEditor(null); };
+		document.getElementById("form-field-add").onclick = function () {
+			syncEditingFromDom(); editingFieldsState.push({ name: "", type: "text", label: {} });
+			renderEditingFields(); renderRequireAny();
+		};
+		document.getElementById("form-save").onclick = function () {
+			syncEditingFromDom();
+			const origId = document.getElementById("form-orig-id").value;
+			const newId = document.getElementById("form-id").value.trim();
+			if (!/^[a-zA-Z0-9_]+$/.test(newId)) { notyf.error("ID форми: лише латиниця, цифри, _"); return; }
+			if (!editingFieldsState.length) { notyf.error("Додайте хоча б одне поле"); return; }
+			for (const f of editingFieldsState) { if (!/^[a-zA-Z0-9_]+$/.test(f.name)) { notyf.error("Ключ поля: лише латиниця, цифри, _"); return; } }
+			const reqAny = Array.from(document.querySelectorAll("#form-requireany .req-any:checked")).map((c) => c.value);
+			const forms = getForms();
+			if (origId && origId !== newId) delete forms[origId];
+			forms[newId] = { fields: editingFieldsState, target: document.getElementById("form-target").value || "lead", requireAnyOf: reqAny };
+			cfgSet(wcsConfig, "forms", forms);
+			renderFormsList(); renderTriggers();
+			formModal.hide();
+			notyf.success("Форму збережено — не забудьте «Зберегти» внизу");
+		};
+
+		// ── Заповнення ──
+		let en = cfgGet(wcsConfig, "locales.enabled", []) || [];
+		if (!en.length) en = ["uk"];
+		renderLocaleUI(en, cfgGet(wcsConfig, "locales.primary", "uk"));
+
+		document.getElementById("cfg-position").value = cfgGet(wcsConfig, "appearance.position", "right");
+		document.getElementById("cfg-appearance-color").value = cfgGet(wcsConfig, "appearance.brandColor", "#007fff");
+		document.getElementById("cfg-greeting-enabled").checked = !!cfgGet(wcsConfig, "greeting.enabled", false);
+		document.getElementById("cfg-greeting-delay").value = cfgGet(wcsConfig, "greeting.autoOpenDelaySec", 0);
+
+		const gAuto = !!cfgGet(wcsConfig, "greeting.autoOpen", false);
+		document.getElementById("cfg-greeting-desktop-autoopen").checked = !!cfgGet(wcsConfig, "greeting.desktop.autoOpen", gAuto);
+		document.getElementById("cfg-greeting-desktop-sound").checked = !!cfgGet(wcsConfig, "greeting.desktop.sound", true);
+		document.getElementById("cfg-greeting-mobile-autoopen").checked = !!cfgGet(wcsConfig, "greeting.mobile.autoOpen", gAuto);
+		document.getElementById("cfg-greeting-mobile-sound").checked = !!cfgGet(wcsConfig, "greeting.mobile.sound", false);
+
+		document.getElementById("cfg-hours-tz").value = cfgGet(wcsConfig, "hours.timezone", "Europe/Kyiv");
+		document.getElementById("cfg-hours-force").value = cfgGet(wcsConfig, "hours.force", "auto");
+		document.getElementById("cfg-productcard").checked = !!cfgGet(wcsConfig, "productCard.enabled", false);
+		document.getElementById("cfg-holidays").value = (cfgGet(wcsConfig, "hours.holidays", []) || []).join("\n");
+
+		// Scheduler ініціалізуємо при першому показі вкладки:
+		// у прихованому блоці він рахує розміри неправильно
+		function initScheduler() {
+			if (wcsSchedulerReady) return;
+			$("#wcs-scheduler").scheduler({ locale: "uk-UA" });
+			$("#wcs-scheduler").scheduler("val", scheduleToScheduler(cfgGet(wcsConfig, "hours.schedule", {})));
+			wcsSchedulerReady = true;
+		}
+		$("#wc-tab-hours-btn").on("shown.bs.tab", initScheduler);
+
+		renderHeaderLangs(); renderGreetingLangs(); renderStringsUi();
+		renderFormsList(); renderTriggers();
+
+		formModal = new bootstrap.Modal(document.getElementById("form-modal"));
+
+		// ── Збір конфігу віджета (викликається з collectChannelFields) ──
+		window.collectWidgetConfig = function (cfg) {
+			cfgSet(cfg, "locales.primary", document.getElementById("cfg-locale-primary").value);
+			cfgSet(cfg, "locales.enabled", getEnabledLangs());
+			cfgSet(cfg, "appearance.position", document.getElementById("cfg-position").value);
+			cfgSet(cfg, "appearance.brandColor", document.getElementById("cfg-appearance-color").value);
+			document.querySelectorAll("#cfg-header-langs input[data-hkey]").forEach((t) => cfgSet(cfg, t.getAttribute("data-hkey"), t.value));
+
+			cfgSet(cfg, "greeting.enabled", document.getElementById("cfg-greeting-enabled").checked);
+			cfgSet(cfg, "greeting.autoOpen", document.getElementById("cfg-greeting-desktop-autoopen").checked);
+			cfgSet(cfg, "greeting.autoOpenDelaySec", parseInt(document.getElementById("cfg-greeting-delay").value, 10) || 0);
+			cfgSet(cfg, "greeting.desktop.autoOpen", document.getElementById("cfg-greeting-desktop-autoopen").checked);
+			cfgSet(cfg, "greeting.desktop.sound", document.getElementById("cfg-greeting-desktop-sound").checked);
+			cfgSet(cfg, "greeting.mobile.autoOpen", document.getElementById("cfg-greeting-mobile-autoopen").checked);
+			cfgSet(cfg, "greeting.mobile.sound", document.getElementById("cfg-greeting-mobile-sound").checked);
+			document.querySelectorAll("#cfg-greeting-langs textarea[data-gkey]").forEach((t) => cfgSet(cfg, t.getAttribute("data-gkey"), t.value));
+
+			cfgSet(cfg, "hours.timezone", document.getElementById("cfg-hours-tz").value);
+			cfgSet(cfg, "hours.force", document.getElementById("cfg-hours-force").value);
+			if (wcsSchedulerReady) cfgSet(cfg, "hours.schedule", schedulerToSchedule($("#wcs-scheduler").scheduler("val")));
+			cfgSet(cfg, "hours.holidays", document.getElementById("cfg-holidays").value.split("\n").map((s) => s.trim()).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s)));
+			cfgSet(cfg, "productCard.enabled", document.getElementById("cfg-productcard").checked);
+
+			collectTextGroups(cfg);
+			collectTriggers(cfg);
+		};
+	})();
 </script>

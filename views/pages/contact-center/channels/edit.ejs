@@ -4,6 +4,7 @@
     <title><%= i18n.__('contact_center.channels.edit.title') %></title>
     <%- include('../../../partials/head'); %>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
+        <link href="/assets/css/scheduler/scheduler.css" rel="stylesheet" />
     <style>
       .channel-head-icon {
         font-size: 2rem;
@@ -179,6 +180,7 @@
     </div>
 
     <%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
+    <script src="/assets/js/scheduler/scheduler.js"></script>
 
     <!-- Notyf -->
     <script src="/assets/js/notyf/notyf.min.js"></script>
@@ -327,8 +329,8 @@
 
         // Початковий стан прапорців із першого запису
         <% if (data.recipients && data.recipients.length) { %>
-        document.getElementById("f_on_new_conversation").checked = <%= data.recipients[0].on_new_conversation ? 'true' : 'false' %>;
-        document.getElementById("f_on_new_message").checked = <%= data.recipients[0].on_new_message ? 'true' : 'false' %>;
+        document.getElementById("f_on_new_conversation").checked = <%= (data.recipients[0].options && data.recipients[0].options.on_new_conversation) ? 'true' : 'false' %>;
+        document.getElementById("f_on_new_message").checked = <%= (data.recipients[0].options && data.recipients[0].options.on_new_message) ? 'true' : 'false' %>;
         <% } %>
       })();
     </script>

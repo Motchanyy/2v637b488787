@@ -15,50 +15,36 @@
 				overflow-x: hidden;
 				scrollbar-width: thin;
 				padding: 1rem;
-				background: #f7f8fa;
 			}
 
-			.msg-row {
-				display: flex;
-				margin-bottom: 0.75rem;
+			.message-client,
+			.message-manager {
+				margin-bottom: 1.5rem;
 			}
 
-			.msg-row.out {
-				justify-content: flex-end;
+			.message-manager {
+				text-align: right;
 			}
 
-			.msg-bubble {
+			.message-client .alert,
+			.message-manager .alert {
 				max-width: 70%;
-				padding: 0.5rem 0.75rem;
-				background: #fff;
-				border: 1px solid #e3e6ea;
-				position: relative;
 				word-break: break-word;
 				white-space: pre-wrap;
+				text-align: left;
 			}
 
-			.msg-row.out .msg-bubble {
-				background: #e7f1ff;
-				border-color: #cfe2ff;
-			}
-
-			.msg-row.failed .msg-bubble {
-				border-color: #dc3545;
-				background: #fdf1f2;
-			}
-
-			.msg-meta {
-				font-size: 0.72rem;
+			.message-client .time,
+			.message-manager .time {
+				display: block;
+				font-size: 0.75rem;
 				color: #6c757d;
-				margin-top: 0.25rem;
-				display: flex;
-				align-items: center;
-				gap: 0.35rem;
-				justify-content: flex-end;
+				margin-top: 0.15rem;
 			}
 
-			.msg-row.in .msg-meta {
-				justify-content: flex-start;
+			.message-failed .alert {
+				border: 1px solid #dc3545;
+				background: #fdf1f2;
 			}
 
 			.msg-system {
@@ -110,12 +96,11 @@
 			}
 
 			.msg-reply {
-				border-left: 3px solid #0057b8;
+				border-left: 3px solid currentColor;
 				padding-left: 0.5rem;
 				margin-bottom: 0.35rem;
 				font-size: 0.8rem;
-				color: #495057;
-				opacity: 0.85;
+				opacity: 0.7;
 			}
 
 			#composer textarea {
@@ -165,8 +150,7 @@
 						<div class="card-header text-bg-primary rounded-0 d-flex align-items-center justify-content-between">
 							<span>
 								<i class="<%= data.meta.icon %> me-2"></i>
-								<%= data.conversation.contact_name || '—' %>
-								<% if (data.conversation.contact_username) { %>
+								<%= data.conversation.contact_name || '—' %> <% if (data.conversation.contact_username) { %>
 								<small class="ms-1">@<%= data.conversation.contact_username %></small>
 								<% } %>
 							</span>
@@ -187,17 +171,53 @@
 						</div>
 
 						<!-- Форма відправки -->
-						<div class="card-footer rounded-0 bg-white">
-							<form id="composer" autocomplete="off">
-								<div class="input-group">
-									<textarea class="form-control rounded-0" id="composer_text" rows="2" maxlength="4000" placeholder="<%= i18n.__('contact_center.dialog.placeholder') %>"></textarea>
-									<button class="btn btn-primary rounded-0" type="submit" id="btn_send">
-										<i class="fa-solid fa-paper-plane"></i>
-									</button>
+						<form id="composer" class="card-footer text-body-secondary bg-transparent p-0 rounded-0" autocomplete="off" style="position: relative">
+							<!-- Прев'ю обраного файлу -->
+							<div id="file_preview" class="alert alert-light border-0 border-bottom rounded-0 py-2 px-3 mb-0 d-none">
+								<div class="d-flex align-items-center justify-content-between gap-2">
+									<span class="small text-truncate" id="file_preview_name"></span>
+									<button type="button" class="btn-close" id="file_preview_clear" aria-label="Close"></button>
 								</div>
-								<small class="text-muted"><%= i18n.__('contact_center.dialog.send_hint') %></small>
-							</form>
-						</div>
+							</div>
+
+							<!-- Панель емодзі. position:absolute — щоб не зсувати верстку -->
+							<div id="emoji_panel" style="display: none; position: absolute; bottom: 100%; left: 0; z-index: 1070; margin-bottom: 0.5rem"></div>
+
+							<textarea class="form-control border-0 rounded-0" id="composer_text" name="message" rows="3" maxlength="4000" placeholder="<%= i18n.__('contact_center.dialog.placeholder') %>"></textarea>
+
+							<div class="d-flex justify-content-between align-items-center p-3 pt-1 gap-2">
+								<div class="btn-group" role="group">
+									<button type="button" class="btn btn-outline-primary rounded-0" id="btn_emoji" title="<%= i18n.__('contact_center.dialog.emoji') %>">
+										<i class="fa-regular fa-face-smile"></i>
+									</button>
+
+									<% if (data.canSendMedia) { %>
+									<label for="composer_file" class="btn btn-outline-primary rounded-0 mb-0" id="btn_attach_label" title="<%= i18n.__('contact_center.dialog.attach') %>">
+										<i class="fa-solid fa-paperclip"></i>
+									</label>
+									<input class="form-control d-none" type="file" id="composer_file" />
+									<% } %> <% if (data.commands && data.commands.length) { %>
+									<div class="btn-group">
+										<button type="button" class="btn btn-outline-primary rounded-0 dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" id="btn_commands" title="<%= i18n.__('contact_center.dialog.commands') %>">
+											<i class="fa-solid fa-terminal"></i>
+										</button>
+										<ul class="dropdown-menu rounded-0" id="channel_commands">
+											<% data.commands.forEach(function (cmd) { %>
+											<li>
+												<a class="dropdown-item channel-command" href="#" data-command="<%= cmd.code %>"> <i class="<%= cmd.icon %> me-2"></i><%= i18n.__(cmd.label) %> </a>
+											</li>
+											<% }); %>
+										</ul>
+									</div>
+									<% } %>
+								</div>
+
+								<div class="d-flex align-items-center gap-3">
+									<small class="text-muted d-none d-md-inline"><%= i18n.__('contact_center.dialog.send_hint') %></small>
+									<button type="submit" id="btn_send" class="btn btn-outline-primary rounded-0"><%= i18n.__('contact_center.dialog.send') %></button>
+								</div>
+							</div>
+						</form>
 					</div>
 				</div>
 
@@ -213,14 +233,10 @@
 								<% if (data.conversation.contact_username) { %>
 								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_username') %></dt>
 								<dd class="col-7">@<%= data.conversation.contact_username %></dd>
-								<% } %>
-
-								<% if (data.conversation.contact_phone) { %>
+								<% } %> <% if (data.conversation.contact_phone) { %>
 								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_phone') %></dt>
 								<dd class="col-7"><%= data.conversation.contact_phone %></dd>
-								<% } %>
-
-								<% if (data.conversation.contact_email) { %>
+								<% } %> <% if (data.conversation.contact_email) { %>
 								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_email') %></dt>
 								<dd class="col-7"><%= data.conversation.contact_email %></dd>
 								<% } %>
@@ -255,6 +271,7 @@
 		<%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
 
 		<script src="/assets/js/notyf/notyf.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/emoji-mart@5.6.0/dist/browser.min.js"></script>
 		<script>
 			const notyf = new Notyf({
 				position: { x: "right", y: "top" },
@@ -265,7 +282,214 @@
 				],
 			});
 		</script>
+		<script>
+			// ================================================================
+			// ПАНЕЛЬ ЕМОДЗІ — Emoji Mart
+			// Пікер монтується лениво, при першому відкритті: дані важать ~400 КБ
+			// і тягнути їх на кожне відкриття діалогу не треба.
+			// ================================================================
+			(function () {
+				var $panel = $("#emoji_panel");
+				var picker = null;
+				var mounting = false;
 
+				function insertEmoji(native) {
+					var ta = document.getElementById("composer_text");
+					if (!ta || ta.disabled) return;
+
+					var start = ta.selectionStart || 0;
+					var end = ta.selectionEnd || 0;
+
+					ta.value = ta.value.slice(0, start) + native + ta.value.slice(end);
+					ta.selectionStart = ta.selectionEnd = start + native.length;
+					ta.focus();
+				}
+
+				async function mountPicker() {
+					if (picker || mounting) return;
+					if (typeof EmojiMart === "undefined") {
+						notyf.error(T.emojiError);
+						return;
+					}
+
+					mounting = true;
+
+					try {
+						picker = new EmojiMart.Picker({
+							// Дані окремим запитом — так радить сама бібліотека
+							data: async function () {
+								var res = await fetch("https://cdn.jsdelivr.net/npm/@emoji-mart/data");
+								return res.json();
+							},
+							locale: "en",
+							theme: "light",
+							previewPosition: "none",
+							skinTonePosition: "search",
+							searchPosition: "sticky",
+							navPosition: "top",
+							perLine: 9,
+							maxFrequentRows: 1,
+							onEmojiSelect: function (emoji) {
+								insertEmoji(emoji.native);
+							},
+						});
+
+						$panel.empty().append(picker);
+					} catch (err) {
+						console.error("emoji-mart:", err);
+						notyf.error(T.emojiError);
+					} finally {
+						mounting = false;
+					}
+				}
+
+				$("#btn_emoji").on("click", async function () {
+					if ($panel.is(":visible")) {
+						$panel.hide();
+						return;
+					}
+
+					await mountPicker();
+					$panel.show();
+				});
+
+				// Закриття при кліку поза панеллю
+				$(document).on("click", function (e) {
+					if (!$(e.target).closest("#emoji_panel, #btn_emoji").length) $panel.hide();
+				});
+			})();
+		</script>
+
+		<script>
+			// ================================================================
+			// ЗАВАНТАЖЕННЯ ФАЙЛУ
+			// Файл іде окремим запитом (multipart), а не разом з текстом:
+			// текст у полі стає підписом до файлу.
+			// ================================================================
+			(function () {
+				var input = document.getElementById("composer_file");
+				if (!input) return;
+
+				var $preview = $("#file_preview");
+
+				input.addEventListener("change", function () {
+					if (!this.files || !this.files.length) return;
+
+					var f = this.files[0];
+
+					// Ліміт дублює серверний — щоб не ганяти файл даремно
+					if (f.size > 50 * 1024 * 1024) {
+						notyf.error(T.fileTooBig);
+						this.value = "";
+						return;
+					}
+
+					$("#file_preview_name").text(f.name + " (" + Math.round(f.size / 1024) + " KB)");
+					$preview.removeClass("d-none");
+				});
+
+				$("#file_preview_clear").on("click", function () {
+					input.value = "";
+					$preview.addClass("d-none");
+				});
+
+				window.hasPendingFile = function () {
+					return !!(input.files && input.files.length);
+				};
+
+				window.uploadPendingFile = async function (caption) {
+					var f = input.files[0];
+					if (!f) return;
+
+					var form = new FormData();
+					form.append("file", f);
+					if (caption) form.append("caption", caption);
+
+					var btn = document.getElementById("btn_send");
+					btn.disabled = true;
+
+					try {
+						var res = await fetch("/api/contact-center/chat/" + CONV_ID + "/upload/", { method: "POST", body: form });
+						var data = await res.json();
+
+						if (data.id_message) {
+							input.value = "";
+							$preview.addClass("d-none");
+							document.getElementById("composer_text").value = "";
+
+							appendMessages(
+								[
+									{
+										id: data.id_message,
+										direction: "out",
+										type: "media",
+										text: caption || null,
+										status: data.status === "success" ? "sent" : "failed",
+										error: data.message,
+										date_add: data.date_add,
+										attachments: [data.attachment],
+									},
+								],
+								false
+							);
+						}
+
+						if (data.status !== "success") notyf.error(data.message || T.sendError);
+					} catch (err) {
+						console.error("upload:", err);
+						notyf.error(T.sendError);
+					} finally {
+						renderComposerState();
+					}
+				};
+			})();
+		</script>
+
+		<script>
+			// ================================================================
+			// КОМАНДИ КАНАЛУ
+			// ================================================================
+			$(document).on("click", ".channel-command", async function (e) {
+				e.preventDefault();
+
+				var command = $(this).data("command");
+				var text = document.getElementById("composer_text").value.trim();
+
+				try {
+					var res = await fetch("/api/contact-center/chat/" + CONV_ID + "/command/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ command: command, text: text }),
+					});
+
+					var data = await res.json();
+
+					if (data.id_message) {
+						document.getElementById("composer_text").value = "";
+						appendMessages(
+							[
+								{
+									id: data.id_message,
+									direction: "out",
+									type: "system",
+									text: data.text,
+									status: data.status === "success" ? "sent" : "failed",
+									error: data.message,
+									date_add: data.date_add,
+									attachments: [],
+								},
+							],
+							false
+						);
+					}
+
+					if (data.status !== "success") notyf.error(data.message || T.sendError);
+				} catch (err) {
+					console.error("command:", err);
+					notyf.error(T.sendError);
+				}
+			});
+		</script>
 		<script>
 			// ================================================================
 			// КОНСТАНТИ
@@ -291,6 +515,14 @@
 				yesterday: "<%= i18n.__('contact_center.dialog.yesterday') %>",
 				saved: "<%= i18n.__('contact_center.dialog.saved') %>",
 				location: "<%= i18n.__('contact_center.dialog.location') %>",
+				placeholder: "<%= i18n.__('contact_center.dialog.placeholder') %>",
+				lockedFree: "<%= i18n.__('contact_center.dialog.locked_free') %>",
+				lockedOther: "<%= i18n.__('contact_center.dialog.locked_other') %>",
+				fileTooBig: "<%= i18n.__('contact_center.dialog.file_too_big') %>",
+				emojiError: "<%= i18n.__('contact_center.dialog.emoji_error') %>",
+				statusSent: "<%= i18n.__('contact_center.dialog.status_sent') %>",
+				statusDelivered: "<%= i18n.__('contact_center.dialog.status_delivered') %>",
+				statusRead: "<%= i18n.__('contact_center.dialog.status_read') %>",
 			};
 
 			function escapeHtml(str) {
@@ -299,8 +531,12 @@
 				});
 			}
 
+			// Дата приходить як "YYYY-MM-DD HH:MM:SS" з MySQL або ISO з socket.
+			// Якщо не розпарсилась — повертаємо поточну, щоб не показувати NaN.
 			function parseDate(value) {
-				return new Date(String(value).replace(" ", "T"));
+				if (!value) return new Date();
+				const d = new Date(String(value).replace(" ", "T"));
+				return isNaN(d) ? new Date() : d;
 			}
 		</script>
 
@@ -343,11 +579,18 @@
 			function renderMessage(m) {
 				// Системні — окремим рядком по центру
 				if (m.type === "system") {
-					return '<div class="msg-system" data-msg-id="' + m.id + '">' + escapeHtml(m.text || "") + "</div>";
+					// Запити контакту/локації — дії менеджера, показуємо з іконкою
+					const icons = { request_contact: "fa-solid fa-address-card", request_location: "fa-solid fa-location-dot" };
+					const icon = icons[m.subtype] ? '<i class="' + icons[m.subtype] + ' me-1"></i>' : "";
+					const err = m.status === "failed" ? ' <i class="fa-solid fa-triangle-exclamation text-danger" title="' + escapeHtml(m.error || "") + '"></i>' : "";
+
+					return '<div class="msg-system" data-msg-id="' + m.id + '">' + icon + escapeHtml(m.text || "") + err + "</div>";
 				}
 
-				const dir = m.direction === "out" ? "out" : "in";
-				const failed = m.status === "failed" ? " failed" : "";
+				const out = m.direction === "out";
+				const rowClass = out ? "message-manager" : "message-client";
+				const alertClass = out ? "alert-primary" : "alert-light";
+				const failed = m.status === "failed" ? " message-failed" : "";
 
 				let inner = "";
 
@@ -374,18 +617,26 @@
 					inner += "<div>" + escapeHtml(m.text) + "</div>";
 				}
 
-				// Метадані
-				const time = parseDate(m.date_add).toTimeString().slice(0, 5);
-				let meta = time;
+				// Час без секунд: ГГ:ХХ ДД.ММ.РРРР
+				const d = parseDate(m.date_add);
+				const pad = function (n) {
+					return String(n).padStart(2, "0");
+				};
+				let meta = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " " + pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear();
 
-				if (dir === "out") {
+				if (out) {
 					if (m.manager_name) meta = escapeHtml(m.manager_name) + " · " + meta;
+
+					// Годинник — у процесі, одна галочка — надіслано,
+					// дві сірі — доставлено, дві сині — прочитано
 					if (m.status === "pending") meta += ' <i class="fa-regular fa-clock" title="' + T.pending + '"></i>';
 					else if (m.status === "failed") meta += ' <i class="fa-solid fa-triangle-exclamation text-danger" title="' + escapeHtml(m.error || T.failed) + '"></i>';
-					else meta += ' <i class="fa-solid fa-check"></i>';
+					else if (m.status === "read") meta += ' <i class="fa-solid fa-check-double text-primary msg-status" title="' + T.statusRead + '"></i>';
+					else if (m.status === "delivered") meta += ' <i class="fa-solid fa-check-double msg-status" title="' + T.statusDelivered + '"></i>';
+					else meta += ' <i class="fa-solid fa-check msg-status" title="' + T.statusSent + '"></i>';
 				}
 
-				return '<div class="msg-row ' + dir + failed + '" data-msg-id="' + m.id + '">' + '<div><div class="msg-bubble">' + inner + '</div><div class="msg-meta">' + meta + "</div></div></div>";
+				return '<div class="' + rowClass + failed + '" data-msg-id="' + m.id + '">' + '<div class="alert ' + alertClass + ' rounded-0 d-inline-block mb-0 p-2">' + inner + "</div>" + '<span class="time m-0">' + meta + "</span></div>";
 			}
 
 			function dayLabel(date) {
@@ -477,6 +728,24 @@
 				}
 			}
 
+			// Троттлимо: серія повідомлень не має давати серію запитів
+			let readTimer = null;
+			function markConversationRead() {
+				clearTimeout(readTimer);
+				readTimer = setTimeout(function () {
+					fetch("/api/contact-center/chat/" + CONV_ID + "/read/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({}),
+					}).catch(function () {});
+				}, 400);
+			}
+
+			// Повернувся на вкладку — теж прочитав
+			document.addEventListener("visibilitychange", function () {
+				if (!document.hidden) markConversationRead();
+			});
+
 			// Підвантаження історії при прокрутці вгору
 			feed.addEventListener("scroll", function () {
 				if (feed.scrollTop < 80 && hasMore && !loading) loadMessages(oldestId);
@@ -494,6 +763,18 @@
 
 			async function sendMessage() {
 				const text = composerText.value.trim();
+
+				if (convManagerId === null || Number(convManagerId) !== CURRENT_USER_ID) {
+					notyf.error(convManagerId === null ? T.lockedFree : T.lockedOther);
+					return;
+				}
+
+				// Обраний файл має пріоритет: текст стає підписом до нього
+				if (typeof window.hasPendingFile === "function" && window.hasPendingFile()) {
+					await window.uploadPendingFile(text);
+					return;
+				}
+
 				if (!text) return;
 
 				const btn = document.getElementById("btn_send");
@@ -537,9 +818,10 @@
 					console.error("send:", err);
 					notyf.error(T.sendError);
 				} finally {
-					btn.disabled = false;
-					composerText.disabled = false;
-					composerText.focus();
+					// Стан відновлюємо через renderComposerState:
+					// діалог міг перейти іншому менеджеру, поки йшов запит
+					renderComposerState();
+					if (!composerText.disabled) composerText.focus();
 				}
 			}
 
@@ -561,6 +843,45 @@
 			// ================================================================
 			// ДІЇ НАД ДІАЛОГОМ
 			// ================================================================
+			// Форма відповіді доступна тільки власнику діалогу
+			function renderComposerState() {
+				const mine = convManagerId !== null && Number(convManagerId) === CURRENT_USER_ID;
+				const text = document.getElementById("composer_text");
+				const btn = document.getElementById("btn_send");
+				let $hint = $("#composer_locked");
+
+				text.disabled = !mine;
+				btn.disabled = !mine;
+
+				// Панель інструментів блокується разом із полем введення
+				$("#btn_emoji, #btn_commands").prop("disabled", !mine);
+				$("#btn_attach_label").toggleClass("disabled", !mine);
+				if (!mine) {
+					$("#emoji_panel").hide();
+					$("#file_preview").addClass("d-none");
+					if (document.getElementById("composer_file")) document.getElementById("composer_file").value = "";
+				}
+
+				if (mine) {
+					$hint.remove();
+					text.placeholder = T.placeholder;
+					$("#composer").find("small.text-muted").show();
+					return;
+				}
+
+				$("#composer").find("small.text-muted").hide();
+
+				text.value = "";
+				text.placeholder = "";
+
+				if (!$hint.length) {
+					$("#composer").prepend('<div id="composer_locked" class="alert alert-secondary rounded-0 border-0 border-bottom mb-0 py-2 px-3 small"></div>');
+					$hint = $("#composer_locked");
+				}
+
+				$hint.text(convManagerId === null ? T.lockedFree : T.lockedOther);
+			}
+
 			function renderAssignButton() {
 				const btn = document.getElementById("btn_assign");
 				const label = document.getElementById("assign_label");
@@ -578,6 +899,8 @@
 					btn.disabled = true;
 					btn.className = "btn btn-outline-secondary rounded-0";
 				}
+
+				renderComposerState();
 			}
 
 			renderAssignButton();
@@ -643,6 +966,10 @@
 
 				feed.querySelector("p.text-muted") && (feed.innerHTML = "");
 				appendMessages([data.message], false);
+
+				// Менеджер дивиться на діалог — отже прочитав.
+				// Без цього клієнт не отримає другу галочку до перезавантаження.
+				if (data.message.direction === "in" && !document.hidden) markConversationRead();
 			});
 
 			// Вкладення довантажилось — підміняємо заглушку

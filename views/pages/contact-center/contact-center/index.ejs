@@ -481,12 +481,9 @@
 					removeFromList("#chats-list-archived", conv.id);
 				}
 
-				if (tabState.open.loaded) {
-					upsertActiveChat(conv, true, OPEN_LIST);
-				} else {
-					loadTab("open", true);
-				}
-
+				// Лічильник непрочитаних персональний — його не можна брати
+				// з широкомовної події. Перезавантажуємо вкладку.
+				loadTab("open", true);
 				loadCounters();
 
 				// Звук і лічильник у favicon — тільки на вхідні
