@@ -5,6 +5,7 @@ const router = express.Router();
 // Controllers
 const authorizationControllers = require("../../controllers/authorization/authorization");
 const conversationsControllers = require("../../controllers/contact-center/conversations");
+const ccUpload = require("../../controllers/contact-center/upload");
 // END Controllers
 
 //Database connection
@@ -49,6 +50,9 @@ router.post("/api/contact-center/get-counters/", authorizationControllers.isAuth
 router.get("/contact-center/chat/:token/", authorizationControllers.isAuthenticated, conversationsControllers.page);
 router.post("/api/contact-center/chat/:id/messages/", authorizationControllers.isAuthenticated, conversationsControllers.messages);
 router.post("/api/contact-center/chat/:id/send/", authorizationControllers.isAuthenticated, conversationsControllers.send);
+router.post("/api/contact-center/chat/:id/read/", authorizationControllers.isAuthenticated, conversationsControllers.read);
+router.post("/api/contact-center/chat/:id/upload/", authorizationControllers.isAuthenticated, ccUpload.single("file"), conversationsControllers.upload);
+router.post("/api/contact-center/chat/:id/command/", authorizationControllers.isAuthenticated, conversationsControllers.command);
 router.post("/api/contact-center/chat/:id/assign/", authorizationControllers.isAuthenticated, conversationsControllers.assign);
 router.post("/api/contact-center/chat/:id/status/", authorizationControllers.isAuthenticated, conversationsControllers.status);
 

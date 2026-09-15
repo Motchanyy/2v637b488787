@@ -30,12 +30,7 @@ async function handleIncoming(idChannel, channelType, normalized) {
                 c.last_message_text, c.last_message_dir, c.date_last_message,
                 ch.type AS channel, ch.name AS channel_name, ch.status AS channel_active,
                 ct.name AS contact_name, ct.username AS contact_username,
-                                (SELECT COUNT(*)
-                   FROM ${P}contact_center_messages AS m
-                  WHERE m.id_conversation = c.id
-                    AND m.direction = 'in'
-                    AND m.id > COALESCE(ur.id_last_read_message, 0)
-                ) AS count
+				0 AS count
          FROM ${P}contact_center_conversations AS c
          INNER JOIN ${P}contact_center_channels AS ch ON ch.id = c.id_channel
          INNER JOIN ${P}contact_center_contacts AS ct ON ct.id = c.id_contact
@@ -54,17 +49,19 @@ async function handleIncoming(idChannel, channelType, normalized) {
 		.notifyIncoming(
 			{
 				id: r.id,
-				id_channel: rows[0].id_channel || r.id_channel,
+				id_channel: r.id_channel,
 				url_token: r.url_token,
 				channel: r.channel,
 				channel_name: r.channel_name,
 				title: r.contact_name || (r.contact_username ? "@" + r.contact_username : "—"),
 			},
 			normalized.message,
-			result.reopened || r.messages_count <= 1,
-			r.count
+			// Новий діалог — якщо це перше повідомлення або діалог відкрили заново
+			result.reopened || Number(r.messages_count) <= 1
 		)
-		.catch(function () {});
+		.catch(function (e) {
+			console.error("cc notify:", e.message);
+		});
 
 	realtime.message({
 		direction: "in",
@@ -85,7 +82,10 @@ async function handleIncoming(idChannel, channelType, normalized) {
 			status: r.id_manager === null ? 0 : 1,
 			id_manager: r.id_manager,
 		},
-		message: Object.assign({ id: result.id_message, direction: "in" }, normalized.message, { attachments: normalized.message.attachments || [] }),
+		message: Object.assign({ id: result.id_message, direction: "in", status: "delivered" }, normalized.message, {
+			attachments: normalized.message.attachments || [],
+			date_add: new Date(normalized.message.date_add || Date.now()).toISOString().slice(0, 19).replace("T", " "),
+		}),
 	});
 }
 
