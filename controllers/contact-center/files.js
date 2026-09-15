@@ -12,8 +12,18 @@ const P = config.get("configDatabase").prefix;
 const T_ATTACH = P + "contact_center_attachments";
 
 // Куди складаємо файли і як їх віддаємо
-const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads", "contact-center");
-const PUBLIC_PREFIX = "/uploads/contact-center";
+// Файли лежать поруч зі статикою: assets роздається в server.js
+const UPLOAD_ROOT = path.join(process.cwd(), "assets", "contact-center");
+const PUBLIC_PREFIX = "/assets/contact-center";
+
+/**
+ * Шлях діалогу: <тип каналу>/<url_token>/<client|manager>
+ * url_token унікальний і непрозорий — файли одного діалогу лежать разом,
+ * а внутрішні ID у шляху не світяться.
+ */
+function conversationDir(channelType, urlToken, side) {
+	return path.join(String(channelType || "unknown"), String(urlToken), side === "manager" ? "manager" : "client");
+}
 
 const MAX_SIZE = 50 * 1024 * 1024;
 const MAX_ATTEMPTS = 5;
@@ -32,11 +42,6 @@ const MIME_EXT = {
 	"application/pdf": ".pdf",
 	"application/zip": ".zip",
 };
-
-function monthDir() {
-	const now = new Date();
-	return path.join(String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, "0"));
-}
 
 function extFor(mime, fileName) {
 	if (MIME_EXT[mime]) return MIME_EXT[mime];
@@ -117,15 +122,17 @@ async function processAttachment(att) {
 		const file = await fetchAttachment(att);
 		const sha = crypto.createHash("sha256").update(file.buffer).digest("hex");
 
-		// Такий файл уже є — перевикористовуємо шлях
-		const [dup] = await connection_pool.query(`SELECT path, thumb_path FROM ${T_ATTACH} WHERE sha256 = ? AND status = 'done' AND path IS NOT NULL LIMIT 1`, [sha]);
+		// Дедуплікація в межах одного діалогу: той самий файл, переданий двічі,
+		// не зберігається повторно. Глобальну дедуплікацію не робимо —
+		// файли розкладені по теках діалогів, і чужий шлях тут недоречний.
+		const [dup] = await connection_pool.query(`SELECT path FROM ${T_ATTACH} WHERE sha256 = ? AND id_conversation = ? AND status = 'done' AND path IS NOT NULL LIMIT 1`, [sha, att.id_conversation]);
 
 		let publicPath;
 
 		if (dup.length) {
 			publicPath = dup[0].path;
 		} else {
-			const dir = monthDir();
+			const dir = conversationDir(att.channel_type, att.url_token, "client");
 			const absDir = path.join(UPLOAD_ROOT, dir);
 			await fs.promises.mkdir(absDir, { recursive: true });
 
@@ -180,12 +187,15 @@ async function processQueue(limit) {
 
 	try {
 		const [rows] = await connection_pool.query(
-			`SELECT id, id_message, id_conversation, id_channel, type, subtype,
-                    sort_order, file_name, mime, source_type, source_ref, attempts
-             FROM ${T_ATTACH}
-             WHERE status = 'pending'
-               AND (date_next_try IS NULL OR date_next_try <= NOW())
-             ORDER BY id ASC
+			`SELECT a.id, a.id_message, a.id_conversation, a.id_channel, a.type, a.subtype,
+                    a.sort_order, a.file_name, a.mime, a.source_type, a.source_ref, a.attempts,
+                    c.url_token, ch.type AS channel_type
+             FROM ${T_ATTACH} AS a
+             INNER JOIN ${P}contact_center_conversations AS c ON c.id = a.id_conversation
+             INNER JOIN ${P}contact_center_channels AS ch ON ch.id = a.id_channel
+             WHERE a.status = 'pending'
+               AND (a.date_next_try IS NULL OR a.date_next_try <= NOW())
+             ORDER BY a.id ASC
              LIMIT ${lim}`
 		);
 
@@ -200,4 +210,4 @@ async function processQueue(limit) {
 	}
 }
 
-module.exports = { processQueue, processAttachment, UPLOAD_ROOT, PUBLIC_PREFIX };
+module.exports = { processQueue, processAttachment, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };

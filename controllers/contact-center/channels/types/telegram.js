@@ -230,6 +230,88 @@ module.exports = {
 		};
 	},
 
+	// Відправка файлу. Telegram уміє тягнути файл за публічним URL —
+	// це надійніше і простіше, ніж multipart-завантаження з нашого боку.
+	async sendMedia(conn, idChannel, target, media) {
+		const [rows] = await conn.execute(`SELECT token_cipher, token_iv, token_tag FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+
+		const r = rows[0];
+		const token = r && cryptoHelper.decrypt(r.token_cipher, r.token_iv, r.token_tag);
+		if (!token) return { ok: false, error: "Токен каналу не задано" };
+
+		// Канонічний тип вкладення → метод Bot API
+		const methodMap = {
+			image: { method: "sendPhoto", field: "photo" },
+			video: { method: "sendVideo", field: "video" },
+			audio: { method: "sendAudio", field: "audio" },
+			file: { method: "sendDocument", field: "document" },
+		};
+
+		const m = methodMap[media.type] || methodMap.file;
+
+		const body = { chat_id: target };
+		body[m.field] = media.url;
+		if (media.caption) body.caption = String(media.caption).slice(0, 1024);
+
+		try {
+			const response = await axios.post(`https://api.telegram.org/bot${token}/${m.method}`, body, { timeout: 60000 });
+
+			const data = response.data;
+			if (!data || !data.ok) return { ok: false, error: "Telegram відхилив файл" };
+
+			return { ok: true, source_id: String(data.result.message_id) };
+		} catch (e) {
+			const msg = (e.response && e.response.data && e.response.data.description) || e.message;
+			return { ok: false, error: String(msg).slice(0, 500) };
+		}
+	},
+
+	// Стандартні запити Telegram: контакт і геолокація.
+	// Реалізуються reply-клавіатурою з одноразовими кнопками.
+	commands: [
+		{ code: "request_contact", label: "contact_center.dialog.cmd_request_contact", icon: "fa-solid fa-address-card" },
+		{ code: "request_location", label: "contact_center.dialog.cmd_request_location", icon: "fa-solid fa-location-dot" },
+	],
+
+	async sendCommand(conn, idChannel, target, command, text) {
+		const [rows] = await conn.execute(`SELECT token_cipher, token_iv, token_tag FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+
+		const r = rows[0];
+		const token = r && cryptoHelper.decrypt(r.token_cipher, r.token_iv, r.token_tag);
+		if (!token) return { ok: false, error: "Токен каналу не задано" };
+
+		const buttons = {
+			request_contact: { text: text, request_contact: true },
+			request_location: { text: text, request_location: true },
+		};
+
+		if (!buttons[command]) return { ok: false, error: "Невідома команда" };
+
+		try {
+			const response = await axios.post(
+				`https://api.telegram.org/bot${token}/sendMessage`,
+				{
+					chat_id: target,
+					text: text,
+					reply_markup: {
+						keyboard: [[buttons[command]]],
+						resize_keyboard: true,
+						one_time_keyboard: true,
+					},
+				},
+				{ timeout: 15000 }
+			);
+
+			const data = response.data;
+			if (!data || !data.ok) return { ok: false, error: "Telegram відхилив запит" };
+
+			return { ok: true, source_id: String(data.result.message_id) };
+		} catch (e) {
+			const msg = (e.response && e.response.data && e.response.data.description) || e.message;
+			return { ok: false, error: String(msg).slice(0, 500) };
+		}
+	},
+
 	identitySql(alias) {
 		return `CONCAT('@', COALESCE(${alias}.bot_username, ''))`;
 	},

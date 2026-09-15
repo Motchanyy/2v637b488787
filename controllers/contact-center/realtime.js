@@ -51,6 +51,17 @@ module.exports = {
 		});
 	},
 
+	// Клієнт прочитав вихідні повідомлення до вказаного ID
+	readReceipt(idConversation, upToMessageId) {
+		const server = io();
+		if (!server) return;
+
+		server.to("io_conversation_" + idConversation).emit("cc:read_receipt", {
+			id_conversation: idConversation,
+			up_to: upToMessageId,
+		});
+	},
+
 	// Онлайн-статус співрозмовника
 	presence(idConversation, online) {
 		const server = io();

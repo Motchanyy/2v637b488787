@@ -3,6 +3,8 @@ const config = require("../../config/config");
 const logging = require("../../logging/logging");
 const types = require("./channels/index");
 const model = require("./model");
+const ccNotifications = require("./notifications");
+const files = require("./files");
 
 const P = config.get("configDatabase").prefix;
 
@@ -132,6 +134,9 @@ const conversationsControllers = {
 				data: {
 					conversation: conv,
 					meta: type ? { icon: type.icon, color: type.color, label: type.label } : { icon: "", color: "#6c757d", label: "" },
+					// Команди канало-специфічні: дропдаун показується лише там, де вони є
+					commands: (type && type.commands) || [],
+					canSendMedia: !!(type && typeof type.sendMedia === "function"),
 				},
 				header: { navbar: "contact-center" },
 			});
@@ -152,6 +157,31 @@ const conversationsControllers = {
 
 			// Відкрив діалог — непрочитані обнуляються
 			await model.markRead(id, req.user.userId);
+			await ccNotifications.markConversationRead(id, req.user.userId);
+
+			// Канал може мати власну логіку прочитання (веб-чат шле галочку клієнту)
+			const [convRows] = await connection_pool.query(
+				`SELECT c.id_channel, c.source_thread_id, ct.external_id, ch.type AS channel_type
+                   FROM ${T_CONVS} AS c
+                   INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
+                   INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
+                  WHERE c.id = ? LIMIT 1`,
+				[id]
+			);
+
+			if (convRows.length) {
+				const type = types.get(convRows[0].channel_type);
+				if (type && typeof type.onRead === "function") {
+					const conn = await connection_pool.getConnection();
+					try {
+						await type.onRead(conn, convRows[0].id_channel, convRows[0].source_thread_id || convRows[0].external_id, req.user.userId);
+					} catch (e) {
+						console.error("channel onRead:", e.message);
+					} finally {
+						conn.release();
+					}
+				}
+			}
 
 			res.status(200).json(result);
 		} catch (error) {
@@ -175,7 +205,7 @@ const conversationsControllers = {
 
 		try {
 			const [rows] = await connection_pool.query(
-				`SELECT c.id, c.id_channel, c.source_thread_id, ct.external_id,
+				`SELECT c.id, c.id_channel, c.id_manager, c.source_thread_id, ct.external_id,
                         ch.type AS channel_type, ch.status AS channel_active
                  FROM ${T_CONVS} AS c
                  INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
@@ -189,6 +219,15 @@ const conversationsControllers = {
 			const conv = rows[0];
 			if (Number(conv.channel_active) !== 1) {
 				return res.status(400).json({ status: "error", message: "Канал вимкнено" });
+			}
+
+			// Відповідати може лише менеджер, який узяв діалог у роботу.
+			// Перевірка на сервері — UI лише дублює її для зручності.
+			if (conv.id_manager === null) {
+				return res.status(403).json({ status: "error", message: "Спочатку візьміть діалог у роботу" });
+			}
+			if (Number(conv.id_manager) !== Number(req.user.userId)) {
+				return res.status(403).json({ status: "error", message: "Діалог веде інший менеджер" });
 			}
 
 			const type = types.get(conv.channel_type);
@@ -208,7 +247,7 @@ const conversationsControllers = {
 			const conn = await connection_pool.getConnection();
 			let result;
 			try {
-				result = await type.send(conn, conv.id_channel, target, { text: text });
+				result = await type.send(conn, conv.id_channel, target, { text: text, id_manager: req.user.userId });
 			} finally {
 				conn.release();
 			}
@@ -228,6 +267,205 @@ const conversationsControllers = {
 			});
 		} catch (error) {
 			console.error("conversation send:", error.message);
+			logging.error(error);
+			res.status(500).json({ status: "error", message: "Помилка сервера" });
+		}
+	},
+
+		// ── Позначити прочитаним ──
+	// Викликається не лише при відкритті сторінки, а й на кожне нове
+	// повідомлення у видимому діалозі — інакше клієнт не бачить другу галочку.
+	read: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ status: "error" });
+
+		try {
+			await model.markRead(id, req.user.userId);
+			await ccNotifications.markConversationRead(id, req.user.userId);
+
+			const [rows] = await connection_pool.query(
+				`SELECT c.id_channel, c.source_thread_id, ct.external_id, ch.type AS channel_type
+                   FROM ${T_CONVS} AS c
+                   INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
+                   INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
+                  WHERE c.id = ? LIMIT 1`,
+				[id]
+			);
+
+			if (rows.length) {
+				const type = types.get(rows[0].channel_type);
+				if (type && typeof type.onRead === "function") {
+					const conn = await connection_pool.getConnection();
+					try {
+						await type.onRead(conn, rows[0].id_channel, rows[0].source_thread_id || rows[0].external_id, req.user.userId);
+					} catch (e) {
+						console.error("channel onRead:", e.message);
+					} finally {
+						conn.release();
+					}
+				}
+			}
+
+			res.status(200).json({ status: "success" });
+		} catch (error) {
+			console.error("conversation read:", error.message);
+			logging.error(error);
+			res.status(500).json({ status: "error" });
+		}
+	},
+
+	// ── Завантаження файлу від менеджера ──
+	// Файл спершу лягає до нас, потім віддається каналу за публічним URL.
+	upload: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ status: "error", message: "Невірний ID" });
+		if (!req.file) return res.status(400).json({ status: "error", message: "Файл не передано" });
+
+		try {
+			const [rows] = await connection_pool.query(
+				`SELECT c.id, c.id_channel, c.id_manager, c.url_token, c.source_thread_id,
+                        ct.external_id, ch.type AS channel_type, ch.status AS channel_active
+                 FROM ${T_CONVS} AS c
+                 INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
+                 INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
+                 WHERE c.id = ? AND ch.deleted = 0 LIMIT 1`,
+				[id]
+			);
+
+			if (!rows.length) return res.status(404).json({ status: "error", message: "Діалог не знайдено" });
+
+			const conv = rows[0];
+
+			if (Number(conv.channel_active) !== 1) return res.status(400).json({ status: "error", message: "Канал вимкнено" });
+			if (conv.id_manager === null) return res.status(403).json({ status: "error", message: "Спочатку візьміть діалог у роботу" });
+			if (Number(conv.id_manager) !== Number(req.user.userId)) return res.status(403).json({ status: "error", message: "Діалог веде інший менеджер" });
+
+			// Тип вкладення з MIME
+			const mime = req.file.mimetype || "application/octet-stream";
+			const attachType = /^image\//.test(mime) ? "image" : /^video\//.test(mime) ? "video" : /^audio\//.test(mime) ? "audio" : "file";
+
+			const publicPath = files.PUBLIC_PREFIX + "/" + files.conversationDir(conv.channel_type, conv.url_token, "manager").replace(/\\/g, "/") + "/" + req.file.filename;
+
+			const caption = String((req.body && req.body.caption) || "").trim() || null;
+
+			// 1. Запис у БД
+			const saved = await model.addOutgoing({
+				id_conversation: conv.id,
+				id_manager: req.user.userId,
+				message: {
+					type: "media",
+					text: caption,
+					attachments: [
+						{
+							type: attachType,
+							path: publicPath,
+							file_name: req.file.originalname,
+							mime: mime,
+							size: req.file.size,
+							source_type: "none",
+						},
+					],
+				},
+			});
+
+			// 2. Відправка в канал
+			const type = types.get(conv.channel_type);
+			const target = conv.source_thread_id || conv.external_id;
+
+			let result = { ok: false, error: "Канал не підтримує файли" };
+
+			if (type && typeof type.sendMedia === "function") {
+				const conn = await connection_pool.getConnection();
+				try {
+					result = await type.sendMedia(conn, conv.id_channel, target, {
+						type: attachType,
+						url: config.get("configServer").url + publicPath,
+						caption: caption,
+					});
+				} finally {
+					conn.release();
+				}
+			}
+
+			// 3. Фіксація
+			if (result.ok) await model.markSent(saved.id_message, result.source_id);
+			else await model.markFailed(saved.id_message, result.error);
+
+			res.status(200).json({
+				status: result.ok ? "success" : "error",
+				id_message: saved.id_message,
+				date_add: saved.date_add,
+				attachment: { type: attachType, path: publicPath, file_name: req.file.originalname, mime: mime, size: req.file.size, status: "done" },
+				message: result.ok ? null : result.error,
+			});
+		} catch (error) {
+			console.error("conversation upload:", error.message);
+			logging.error(error);
+			res.status(500).json({ status: "error", message: "Помилка сервера" });
+		}
+	},
+
+	// ── Команда каналу (запит контакту, геолокації) ──
+	command: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		const command = String((req.body && req.body.command) || "");
+		const text = String((req.body && req.body.text) || "").trim();
+
+		if (!id) return res.status(400).json({ status: "error", message: "Невірний ID" });
+		if (!command) return res.status(400).json({ status: "error", message: "Команду не вказано" });
+
+		try {
+			const [rows] = await connection_pool.query(
+				`SELECT c.id, c.id_channel, c.id_manager, c.source_thread_id,
+                        ct.external_id, ch.type AS channel_type, ch.status AS channel_active
+                 FROM ${T_CONVS} AS c
+                 INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
+                 INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
+                 WHERE c.id = ? AND ch.deleted = 0 LIMIT 1`,
+				[id]
+			);
+
+			if (!rows.length) return res.status(404).json({ status: "error", message: "Діалог не знайдено" });
+
+			const conv = rows[0];
+
+			if (Number(conv.channel_active) !== 1) return res.status(400).json({ status: "error", message: "Канал вимкнено" });
+			if (Number(conv.id_manager) !== Number(req.user.userId)) return res.status(403).json({ status: "error", message: "Спочатку візьміть діалог у роботу" });
+
+			const type = types.get(conv.channel_type);
+			if (!type || typeof type.sendCommand !== "function") {
+				return res.status(400).json({ status: "error", message: "Канал не підтримує команди" });
+			}
+
+			// Текст кнопки — те, що побачить клієнт
+			const label = text || (command === "request_contact" ? "Поділитися номером" : "Поділитися локацією");
+
+			const saved = await model.addOutgoing({
+				id_conversation: conv.id,
+				id_manager: req.user.userId,
+				message: { type: "system", subtype: command, text: label },
+			});
+
+			const conn = await connection_pool.getConnection();
+			let result;
+			try {
+				result = await type.sendCommand(conn, conv.id_channel, conv.source_thread_id || conv.external_id, command, label);
+			} finally {
+				conn.release();
+			}
+
+			if (result.ok) await model.markSent(saved.id_message, result.source_id);
+			else await model.markFailed(saved.id_message, result.error);
+
+			res.status(200).json({
+				status: result.ok ? "success" : "error",
+				id_message: saved.id_message,
+				date_add: saved.date_add,
+				text: label,
+				message: result.ok ? null : result.error,
+			});
+		} catch (error) {
+			console.error("conversation command:", error.message);
 			logging.error(error);
 			res.status(500).json({ status: "error", message: "Помилка сервера" });
 		}

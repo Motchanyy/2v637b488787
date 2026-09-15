@@ -3,8 +3,7 @@ const cryptoHelper = require("../../../../helpers/crypto");
 
 const P = config.get("configDatabase").prefix;
 const TABLE = P + "contact_center_channel_webchat";
-
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const SITES = P + "web_chat_sites";
 
 module.exports = {
 	code: "webchat",
@@ -14,23 +13,43 @@ module.exports = {
 	view: "./types/webchat",
 	table: TABLE,
 
+	// ── Створення каналу ──
+	// site_id — ідентифікатор, який віджет передає в data-site-id.
+	// Рядок у web_chat_sites створюється одразу: без нього /chat/config
+	// відхилить домен і віджет не стартує.
 	async create(conn, idChannel) {
-		await conn.execute(`INSERT INTO ${TABLE} (id_channel, widget_key, widget_secret) VALUES (?, ?, ?)`, [idChannel, cryptoHelper.random(16), cryptoHelper.random(32)]);
+		const siteId = "s_" + cryptoHelper.random(12);
+
+		await conn.execute(`INSERT INTO ${SITES} (site_id, domains, active) VALUES (?, '', 0)`, [siteId]);
+		await conn.execute(`INSERT INTO ${TABLE} (id_channel, site_id) VALUES (?, ?)`, [idChannel, siteId]);
 	},
 
+	// ── Дані для сторінки налаштувань ──
 	async load(conn, idChannel) {
 		const [rows] = await conn.execute(
-			`SELECT id, widget_key, allowed_origins, title, subtitle,
-                    welcome_message, offline_message, color_primary, color_accent,
-                    position, avatar, require_name, require_email, require_phone
-             FROM ${TABLE} WHERE id_channel = ? LIMIT 1`,
+			`SELECT w.id, w.site_id,
+                    s.domains, s.active AS site_active, s.config
+             FROM ${TABLE} AS w
+             LEFT JOIN ${SITES} AS s ON s.site_id = w.site_id
+             WHERE w.id_channel = ? LIMIT 1`,
 			[idChannel]
 		);
 
 		const r = rows[0] || {};
-		return Object.assign({}, r, { has_token: true });
+
+		// config — JSON з мовами, привітаннями, годинами, формами й тригерами.
+		// Саме він є справжнім джерелом налаштувань віджета.
+		let cfg = {};
+		try {
+			cfg = r.config ? (typeof r.config === "string" ? JSON.parse(r.config) : r.config) : {};
+		} catch (e) {
+			cfg = {};
+		}
+
+		return Object.assign({}, r, { config: cfg, has_token: true });
 	},
 
+	// ── Валідація ──
 	validate(body) {
 		const errors = [];
 
@@ -40,36 +59,48 @@ module.exports = {
 		} else if (origins.length > 5000) {
 			errors.push({ field: "allowed_origins", message: "Список доменів задовгий" });
 		} else {
-			// Кожен домен окремо: без схеми, без шляху
 			const bad = origins
 				.split(",")
 				.map(function (d) {
 					return d.trim();
 				})
 				.filter(function (d) {
-					return d && !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d);
+					return d && !/^\*?\.?[a-z0-9.-]+\.[a-z]{2,}$/i.test(d);
 				});
 
-			if (bad.length) {
-				errors.push({ field: "allowed_origins", message: "Некоректний домен: " + bad[0] });
-			}
+			if (bad.length) errors.push({ field: "allowed_origins", message: "Некоректний домен: " + bad[0] });
 		}
 
-		if (body.color_primary && !HEX_COLOR.test(body.color_primary)) {
-			errors.push({ field: "color_primary", message: "Невірний формат кольору" });
-		}
-		if (body.color_accent && !HEX_COLOR.test(body.color_accent)) {
-			errors.push({ field: "color_accent", message: "Невірний формат кольору" });
-		}
-		if (body.position && ["right", "left"].indexOf(body.position) === -1) {
-			errors.push({ field: "position", message: "Невірне положення віджета" });
+		// Конфіг віджета валідує сам модуль веб-чату — там повний набір правил
+		if (body.widget_config) {
+			let cfg = null;
+
+			try {
+				cfg = typeof body.widget_config === "string" ? JSON.parse(body.widget_config) : body.widget_config;
+			} catch (e) {
+				errors.push({ field: "widget_config", message: "Конфіг не є коректним JSON" });
+			}
+
+			if (cfg) {
+				const webchat = require("../../../../routes/contact-center/web-chat/web-chat");
+
+				if (typeof webchat.validateConfig === "function") {
+					const result = webchat.validateConfig(cfg);
+
+					if (!result.ok) {
+						result.errors.slice(0, 8).forEach(function (e) {
+							errors.push({ field: "widget_config", message: e.path + ": " + e.message });
+						});
+					}
+				}
+			}
 		}
 
 		return { valid: errors.length === 0, errors: errors };
 	},
 
+	// ── Збереження ──
 	async save(conn, idChannel, body) {
-		// Нормалізація доменів: тримаємо у БД чистий список через кому
 		const origins = String(body.allowed_origins || "")
 			.split(",")
 			.map(function (d) {
@@ -78,37 +109,96 @@ module.exports = {
 			.filter(Boolean)
 			.join(",");
 
+		// web_chat_sites.active керує тим, чи віджет узагалі відповідає
+		const active = origins && body.status ? 1 : 0;
+
 		await conn.execute(
-			`UPDATE ${TABLE}
-             SET allowed_origins = ?, title = ?, subtitle = ?,
-                 welcome_message = ?, offline_message = ?,
-                 color_primary = ?, color_accent = ?, position = ?,
-                 require_name = ?, require_email = ?, require_phone = ?
-             WHERE id_channel = ?`,
-			[origins, String(body.title || "").slice(0, 255) || null, String(body.subtitle || "").slice(0, 255) || null, String(body.welcome_message || "") || null, String(body.offline_message || "") || null, HEX_COLOR.test(body.color_primary) ? body.color_primary : "#0d3b66", HEX_COLOR.test(body.color_accent) ? body.color_accent : "#f4a261", body.position === "left" ? "left" : "right", body.require_name ? 1 : 0, body.require_email ? 1 : 0, body.require_phone ? 1 : 0, idChannel]
+			`UPDATE ${SITES} AS s
+                INNER JOIN ${TABLE} AS w ON w.site_id = s.site_id
+                SET s.domains = ?, s.active = ?
+              WHERE w.id_channel = ?`,
+			[origins, active, idChannel]
 		);
 
-		// Веб-чат готовий одразу після вказання доменів
+		if (body.widget_config) {
+			const json = typeof body.widget_config === "string" ? body.widget_config : JSON.stringify(body.widget_config);
+
+			await conn.execute(
+				`UPDATE ${SITES} AS s
+                    INNER JOIN ${TABLE} AS w ON w.site_id = s.site_id
+                    SET s.config = CAST(? AS JSON)
+                  WHERE w.id_channel = ?`,
+				[json, idChannel]
+			);
+
+			// Скидаємо 60-секундний кеш конфігу, інакше зміни підхопляться із затримкою
+			const [siteRows] = await conn.execute(`SELECT site_id FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+
+			if (siteRows.length) {
+				const webchat = require("../../../../routes/contact-center/web-chat/web-chat");
+				if (typeof webchat.bustWidgetCfg === "function") webchat.bustWidgetCfg(siteRows[0].site_id);
+			}
+		}
+
 		return { configured: !!origins, reload: false };
 	},
 
+	// ── Перевірка підключення ──
 	async test(conn, idChannel) {
-		const [rows] = await conn.execute(`SELECT allowed_origins, widget_key FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+		const [rows] = await conn.execute(
+			`SELECT w.site_id, s.domains, s.active
+               FROM ${TABLE} AS w
+               LEFT JOIN ${SITES} AS s ON s.site_id = w.site_id
+              WHERE w.id_channel = ? LIMIT 1`,
+			[idChannel]
+		);
 
 		const r = rows[0];
-		if (!r || !r.widget_key) return { ok: false, error: "Ключ віджета не згенеровано" };
-		if (!r.allowed_origins) return { ok: false, error: "Не вказано жодного дозволеного домену" };
+		if (!r || !r.site_id) return { ok: false, error: "site_id не згенеровано" };
+		if (r.domains === null) return { ok: false, error: "Сайт віджета не знайдено в web_chat_sites" };
+		if (!r.domains) return { ok: false, error: "Не вказано жодного дозволеного домену" };
 
 		return { ok: true };
 	},
 
-	// Веб-чат не має зовнішнього API: повідомлення доставляється сокетом.
-	// Саму подію шле контролер діалогу, тут лише підтверджуємо запис.
+	// ── Відправка повідомлення ──
+	// Веб-чат не має зовнішнього API — доставка через socket namespace /webchat.
+	// target тут дорівнює roomId ("<site_id>_<visitor_id>").
 	async send(conn, idChannel, target, message) {
-		return { ok: true, source_id: null, via_socket: true };
+		const [rows] = await conn.execute(`SELECT site_id FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+
+		const siteId = rows.length ? rows[0].site_id : null;
+		if (!siteId) return { ok: false, error: "site_id каналу не задано" };
+
+		// require усередині: модуль веб-чату тягне цей файл через реєстр каналів,
+		// тому на верхньому рівні вийшла б циклічна залежність
+		const webchat = require("../../../../routes/contact-center/web-chat/web-chat");
+
+		if (typeof webchat.sendFromCrm !== "function") {
+			return { ok: false, error: "Модуль веб-чату не підтримує відправку" };
+		}
+
+		const result = await webchat.sendFromCrm(siteId, target, message.text, message.id_manager);
+
+		return result.ok ? { ok: true, source_id: "wc_" + result.id } : { ok: false, error: result.error };
 	},
 
+	// ── Прочитання менеджером ──
+	// Прокидаємо у стару схему, щоб клієнт побачив другу галочку
+	async onRead(conn, idChannel, target, idManager) {
+		const [rows] = await conn.execute(`SELECT site_id FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+
+		const siteId = rows.length ? rows[0].site_id : null;
+		if (!siteId) return;
+
+		const webchat = require("../../../../routes/contact-center/web-chat/web-chat");
+		if (typeof webchat.markReadFromCrm !== "function") return;
+
+		await webchat.markReadFromCrm(siteId, target, idManager);
+	},
+
+	// ── Ідентифікатор у списку каналів ──
 	identitySql(alias) {
-		return `COALESCE(SUBSTRING_INDEX(${alias}.allowed_origins, ',', 1), '')`;
+		return `COALESCE(${alias}.site_id, '')`;
 	},
 };

@@ -499,7 +499,25 @@ async function getMessages(idConversation, before, limit) {
 	return { messages: rows, hasMore: rows.length === lim };
 }
 
+/**
+ * Клієнт прочитав вихідні повідомлення до вказаного ID.
+ * Канали, які не повідомляють про прочитання (Telegram), це не викликають —
+ * там статус лишається 'sent'.
+ */
+async function markOutgoingRead(idConversation, upToMessageId) {
+	const [r] = await connection_pool.execute(
+		`UPDATE ${T_MESSAGES}
+            SET status = 'read'
+          WHERE id_conversation = ? AND direction = 'out'
+            AND id <= ? AND status IN ('sent','delivered')`,
+		[idConversation, upToMessageId]
+	);
+
+	return r.affectedRows;
+}
+
 module.exports = {
+	markOutgoingRead,
 	getConversationByToken,
 	getMessages,
 	findOrCreateContact,
