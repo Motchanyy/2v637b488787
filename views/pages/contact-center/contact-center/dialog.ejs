@@ -106,6 +106,36 @@
 			#composer textarea {
 				resize: none;
 			}
+
+			.cc-avatar {
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				object-fit: cover;
+				flex-shrink: 0;
+			}
+
+			.cc-avatar-fallback {
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				flex-shrink: 0;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				background: #d2d8e0;
+				color: #495057;
+				font-weight: 600;
+				font-size: 1rem;
+				text-transform: uppercase;
+			}
+
+			.cc-avatar-lg,
+			.cc-avatar-fallback-lg {
+				width: 72px;
+				height: 72px;
+				font-size: 1.6rem;
+			}
 		</style>
 	</head>
 
@@ -148,11 +178,19 @@
 					<div class="card border-primary rounded-0 h-100 d-flex flex-column">
 						<!-- Шапка діалогу -->
 						<div class="card-header text-bg-primary rounded-0 d-flex align-items-center justify-content-between">
-							<span>
-								<i class="<%= data.meta.icon %> me-2"></i>
-								<%= data.conversation.contact_name || '—' %> <% if (data.conversation.contact_username) { %>
-								<small class="ms-1">@<%= data.conversation.contact_username %></small>
+							<span class="d-flex align-items-center">
+								<% if (data.conversation.contact_avatar) { %>
+								<img src="<%= data.conversation.contact_avatar %>" class="cc-avatar me-2 cc-avatar-img" alt="" referrerpolicy="no-referrer" />
+								<span class="cc-avatar-fallback me-2" style="display: none"><%= (data.conversation.contact_name || '?').trim().charAt(0) %></span>
+								<% } else { %>
+								<span class="cc-avatar-fallback me-2"><%= (data.conversation.contact_name || '?').trim().charAt(0) %></span>
 								<% } %>
+								<span>
+									<i class="<%= data.meta.icon %> me-2"></i>
+									<%= data.conversation.contact_name || '—' %> <% if (data.conversation.contact_username) { %>
+									<small class="ms-1">@<%= data.conversation.contact_username %></small>
+									<% } %>
+								</span>
 							</span>
 							<span class="badge text-bg-light rounded-0"><%= data.conversation.channel_name %></span>
 						</div>
@@ -226,6 +264,14 @@
 					<div class="card border-primary rounded-0 mb-3">
 						<div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.dialog.contact') %></div>
 						<div class="card-body">
+							<div class="text-center mb-3">
+								<% if (data.conversation.contact_avatar) { %>
+								<img src="<%= data.conversation.contact_avatar %>" class="cc-avatar cc-avatar-lg cc-avatar-img" alt="" referrerpolicy="no-referrer" />
+								<span class="cc-avatar-fallback cc-avatar-fallback-lg" style="display: none"><%= (data.conversation.contact_name || '?').trim().charAt(0) %></span>
+								<% } else { %>
+								<span class="cc-avatar-fallback cc-avatar-fallback-lg"><%= (data.conversation.contact_name || '?').trim().charAt(0) %></span>
+								<% } %>
+							</div>
 							<dl class="row mb-0 small">
 								<dt class="col-5"><%= i18n.__('contact_center.dialog.contact_name') %></dt>
 								<dd class="col-7"><%= data.conversation.contact_name || '—' %></dd>
@@ -359,7 +405,19 @@
 				});
 			})();
 		</script>
-
+		<script>
+			// Фолбек аватара: CSP забороняє inline onerror, тож вішаємо обробник тут.
+			// Якщо фото не завантажилось — ховаємо img, показуємо кружечок з літерою.
+			document.querySelectorAll(".cc-avatar-img").forEach(function (img) {
+				img.addEventListener("error", function () {
+					this.style.display = "none";
+					var fb = this.nextElementSibling;
+					if (fb && fb.classList.contains("cc-avatar-fallback")) fb.style.display = "inline-flex";
+				});
+				// Якщо картинка вже встигла впасти до навішування обробника
+				if (img.complete && img.naturalWidth === 0) img.dispatchEvent(new Event("error"));
+			});
+		</script>
 		<script>
 			// ================================================================
 			// ЗАВАНТАЖЕННЯ ФАЙЛУ
