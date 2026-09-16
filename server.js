@@ -52,9 +52,7 @@ app.use(
 				fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
 				imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://*.cdninstagram.com", "https://*.fbcdn.net"],
 				mediaSrc: ["'self'", "blob:"],
-				// emoji-mart тягне свої дані окремим запитом
-				connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"],
-				connectSrc: ["'self'", "https://cdn.socket.io", "https://cdn.jsdelivr.net", "wss:", "ws:"],
+				connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
 			},
 		},
 	})
@@ -85,7 +83,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Обов'язково ДО bodyParser.json(), інакше req.body стане об'єктом і підпис не зійдеться.
 app.use("/api/contact-center/webhook/instagram", express.raw({ type: "*/*" }));
 
-app.use(bodyParser.json());
 app.use(express.json({ limit: "300kb" }));
 
 // ─── СТИСНЕННЯ ВІДПОВІДЕЙ ─────────────────────────────

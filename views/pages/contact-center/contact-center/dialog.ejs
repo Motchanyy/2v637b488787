@@ -712,7 +712,10 @@
 					else meta += ' <i class="fa-solid fa-check msg-status" title="' + T.statusSent + '"></i>';
 				}
 
-				return '<div class="' + rowClass + failed + '" data-msg-id="' + m.id + '">' + '<div class="alert ' + alertClass + ' rounded-0 d-inline-block mb-0 p-2">' + inner + "</div>" + '<span class="time m-0">' + meta + "</span></div>";
+				// Реакція клієнта (emoji під бульбашкою) — при завантаженні з БД
+				const reactionBadge = m.reaction ? '<span class="msg-reaction">' + escapeHtml(m.reaction) + "</span>" : "";
+
+				return '<div class="' + rowClass + failed + '" data-msg-id="' + m.id + '">' + '<div class="alert msg-bubble ' + alertClass + ' rounded-0 d-inline-block mb-0 p-2">' + inner + reactionBadge + "</div>" + '<span class="time m-0">' + meta + "</span></div>";
 			}
 
 			function dayLabel(date) {
