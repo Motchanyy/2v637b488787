@@ -365,6 +365,16 @@ module.exports = {
 			};
 		}
 
+		// Реакція на наше вихідне повідомлення (emoji під бульбашкою).
+		if (ev.reaction) {
+			return {
+				kind: "reaction",
+				mid: ev.reaction.mid || null,
+				action: ev.reaction.action === "unreact" ? "unreact" : "react",
+				emoji: ev.reaction.emoji || null,
+			};
+		}
+
 		if (!ev.message) return null;
 
 		const msg = ev.message;
@@ -430,8 +440,10 @@ module.exports = {
 				source_id: String(msg.mid || ""),
 				type: msgType,
 				subtype: null,
-				text: text, // підпис до медіа зберігається разом із вкладенням
+				text: text,
 				attachments: attachments,
+				// Клієнт відповів на конкретне повідомлення — mid оригіналу
+				reply_to_source_id: msg.reply_to && msg.reply_to.mid ? String(msg.reply_to.mid) : null,
 				date_add: new Date(tsMs),
 			},
 		};

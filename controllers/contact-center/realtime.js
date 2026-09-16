@@ -62,6 +62,18 @@ module.exports = {
 		});
 	},
 
+	// Клієнт поставив/прибрав реакцію на повідомлення
+	reaction(idConversation, idMessage, emoji) {
+		const server = io();
+		if (!server) return;
+
+		server.to("io_conversation_" + idConversation).emit("cc:reaction", {
+			id_conversation: idConversation,
+			id_message: idMessage,
+			reaction: emoji, // null = прибрано
+		});
+	},
+
 	// Онлайн-статус співрозмовника
 	presence(idConversation, online) {
 		const server = io();

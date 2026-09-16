@@ -220,15 +220,23 @@ async function addIncoming(payload) {
 		const attachments = m.attachments || [];
 		const dateAdd = m.date_add || new Date();
 
+		// Reply: клієнт відповів на конкретне повідомлення.
+		// Знаходимо наше повідомлення по source_id (mid оригіналу) → внутрішній id.
+		let idReplyTo = null;
+		if (m.reply_to_source_id) {
+			const [rt] = await conn.execute(`SELECT id FROM ${T_MESSAGES} WHERE id_channel = ? AND source_id = ? LIMIT 1`, [payload.id_channel, String(m.reply_to_source_id)]);
+			if (rt.length) idReplyTo = rt[0].id;
+		}
+
 		let result;
 		try {
 			[result] = await conn.execute(
 				`INSERT INTO ${T_MESSAGES}
                     (id_conversation, id_channel, direction, source_id,
-                     type, subtype, text, lat, lng, attributes,
+                     type, subtype, text, id_reply_to, lat, lng, attributes,
                      status, has_attachments, date_add)
-                 VALUES (?, ?, 'in', ?, ?, ?, ?, ?, ?, ?, 'delivered', ?, ?)`,
-				[conv.id, payload.id_channel, m.source_id || null, type, m.subtype || null, m.text || null, m.lat || null, m.lng || null, toJson(m.attributes), attachments.length ? 1 : 0, dateAdd]
+                 VALUES (?, ?, 'in', ?, ?, ?, ?, ?, ?, ?, ?, 'delivered', ?, ?)`,
+				[conv.id, payload.id_channel, m.source_id || null, type, m.subtype || null, m.text || null, idReplyTo, m.lat || null, m.lng || null, toJson(m.attributes), attachments.length ? 1 : 0, dateAdd]
 			);
 		} catch (e) {
 			// Повтор вебхука — uniq_conv_source
@@ -465,12 +473,14 @@ async function getMessages(idConversation, before, limit) {
 
 	const [rows] = await connection_pool.query(
 		`SELECT m.id, m.direction, m.id_manager, m.source_id, m.type, m.subtype,
-                m.text, m.id_reply_to, m.lat, m.lng, m.status, m.error,
+                m.text, m.reaction, m.id_reply_to, m.lat, m.lng, m.status, m.error,
                 m.has_attachments, m.date_add, m.date_edited, m.date_deleted,
+                rm.text AS reply_text, rm.direction AS reply_dir, rm.type AS reply_type,
                 NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), '') AS manager_name,
                 u.avatar AS manager_avatar
          FROM ${T_MESSAGES} AS m
          LEFT JOIN ${P}users AS u ON u.id = m.id_manager
+         LEFT JOIN ${T_MESSAGES} AS rm ON rm.id = m.id_reply_to
          WHERE m.id_conversation = ? ${where}
          ORDER BY m.id DESC
          LIMIT ${lim}`,
@@ -553,9 +563,27 @@ async function markOutgoingReadBySourceId(idChannel, sourceId) {
 	return { affected: r.affectedRows, id_conversation: msg.id_conversation, up_to_id: msg.id };
 }
 
+/**
+ * Ставить / прибирає реакцію на повідомлення по source_id (mid).
+ * action='react' → зберігаємо emoji; 'unreact' → очищаємо.
+ */
+async function setMessageReaction(idChannel, sourceId, action, emoji) {
+	const [rows] = await connection_pool.execute(`SELECT id, id_conversation FROM ${T_MESSAGES} WHERE id_channel = ? AND source_id = ? LIMIT 1`, [idChannel, String(sourceId)]);
+
+	if (!rows.length) return { affected: 0, id_conversation: null, id_message: null };
+
+	const msg = rows[0];
+	const value = action === "unreact" ? null : emoji || "❤️";
+
+	await connection_pool.execute(`UPDATE ${T_MESSAGES} SET reaction = ? WHERE id = ?`, [value, msg.id]);
+
+	return { affected: 1, id_conversation: msg.id_conversation, id_message: msg.id, reaction: value };
+}
+
 module.exports = {
 	markOutgoingRead,
 	markOutgoingReadBySourceId,
+	setMessageReaction,
 	getConversationByToken,
 	getMessages,
 	findOrCreateContact,

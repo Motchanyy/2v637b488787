@@ -12,6 +12,14 @@ const ccNotifications = require("../../../controllers/contact-center/notificatio
 
 const P = config.get("configDatabase").prefix;
 
+// Локальний час сервера у форматі "YYYY-MM-DD HH:MM:SS" — той самий,
+// що getMessages віддає з БД. Без toISOString (він перегонить у UTC і зсуває зону).
+function formatLocal(d) {
+	const dt = d instanceof Date ? d : new Date(d);
+	const p = (n) => String(n).padStart(2, "0");
+	return dt.getFullYear() + "-" + p(dt.getMonth() + 1) + "-" + p(dt.getDate()) + " " + p(dt.getHours()) + ":" + p(dt.getMinutes()) + ":" + p(dt.getSeconds());
+}
+
 // Спільна обробка нормалізованого повідомлення
 async function handleIncoming(idChannel, channelType, normalized) {
 	if (!normalized) return;
@@ -85,7 +93,7 @@ async function handleIncoming(idChannel, channelType, normalized) {
 		},
 		message: Object.assign({ id: result.id_message, direction: "in", status: "delivered" }, normalized.message, {
 			attachments: normalized.message.attachments || [],
-			date_add: new Date(normalized.message.date_add || Date.now()).toISOString().slice(0, 19).replace("T", " "),
+			date_add: formatLocal(normalized.message.date_add || new Date()),
 		}),
 	});
 }
@@ -209,6 +217,17 @@ router.post(["/api/contact-center/webhook/instagram/", "/api/contact-center/webh
 						const rr = await model.markOutgoingReadBySourceId(account.id_channel, normalized.mid);
 						if (rr.affected > 0 && rr.id_conversation) {
 							realtime.readReceipt(rr.id_conversation, rr.up_to_id);
+						}
+					}
+					continue;
+				}
+
+				// Реакція клієнта на наше повідомлення
+				if (normalized && normalized.kind === "reaction") {
+					if (normalized.mid) {
+						const rx = await model.setMessageReaction(account.id_channel, normalized.mid, normalized.action, normalized.emoji);
+						if (rx.affected > 0) {
+							realtime.reaction(rx.id_conversation, rx.id_message, rx.reaction);
 						}
 					}
 					continue;
