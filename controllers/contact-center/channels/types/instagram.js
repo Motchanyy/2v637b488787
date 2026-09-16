@@ -153,6 +153,21 @@ module.exports = {
 		}
 	},
 
+	// ── Менеджер прочитав → показати клієнту "seen" в Instagram ──
+	// Викликається з роуту read/messages (канало-агностичний хук onRead).
+	async onRead(conn, idChannel, target, idManager) {
+		const [rows] = await conn.execute(`SELECT token_cipher, token_iv, token_tag FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+		const r = rows[0];
+		const token = r && cryptoHelper.decrypt(r.token_cipher, r.token_iv, r.token_tag);
+		if (!token || !target) return;
+
+		try {
+			await axios.post(`${GRAPH}/me/messages`, { recipient: { id: target }, sender_action: "mark_seen" }, { params: { access_token: token }, timeout: 10000 });
+		} catch (e) {
+			// mark_seen не критичний — тихо ігноруємо
+		}
+	},
+
 	// ── Відправка медіа (менеджер → клієнт) ──
 	// Instagram завантажує файл сам за публічним URL (url має бути https і доступний ззовні).
 	// Етап 2: підтримка зображень. Відео/аудіо/файли — та сама схема з іншим type.
