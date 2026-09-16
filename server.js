@@ -50,7 +50,7 @@ app.use(
 				scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://code.jquery.com", "https://unpkg.com", "https://cdnjs.cloudflare.com", "https://cdn.socket.io", "'unsafe-inline'"],
 				styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
 				fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-				imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net"],
+				imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://*.cdninstagram.com", "https://*.fbcdn.net"],
 				mediaSrc: ["'self'", "blob:"],
 				// emoji-mart тягне свої дані окремим запитом
 				connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"],
@@ -71,9 +71,6 @@ const io = setupSocketIO(server);
 const viber_bot = require("./routes/contact-center/viber/viber");
 app.use("/viber/webhook/", viber_bot.middleware());
 
-// ─── INSTAGRAM WEBHOOK (сире тіло для перевірки підпису) ──
-app.use("/", require("./routes/contact-center/instagram/webhook"));
-
 // ─── ЗАВАНТАЖЕННЯ КОНФІГУРАЦІЇ ────────────────────────
 const config = require("./config/config");
 const configServer = config.get("configServer");
@@ -84,6 +81,10 @@ const configServer = config.get("configServer");
 
 // ─── ПАРСИНГ ТІЛА ЗАПИТУ ──────────────────────────────
 app.use(bodyParser.urlencoded({ extended: false }));
+// Сире тіло лише для IG-вебхука — потрібне для перевірки підпису Meta.
+// Обов'язково ДО bodyParser.json(), інакше req.body стане об'єктом і підпис не зійдеться.
+app.use("/api/contact-center/webhook/instagram", express.raw({ type: "*/*" }));
+
 app.use(bodyParser.json());
 app.use(express.json({ limit: "300kb" }));
 
@@ -230,7 +231,6 @@ app.use("/", require("./routes/contact-center/contact-center"));
 app.use("/", require("./routes/contact-center/channels/channels"));
 app.use("/", require("./routes/contact-center/telegram/telegram"));
 app.use("/", require("./routes/contact-center/web-chat/web-chat"));
-app.use("/", require("./routes/contact-center/instagram/instagram"));
 app.use("/", require("./routes/contact-center/webhooks/webhooks"));
 
 // ─── CRM МОДУЛІ ─────────────────────────────────────
@@ -289,7 +289,6 @@ app.use((req, res) => {
 
 const { rebuild, verify } = require("./cron/analytics/rebuildStats");
 const { tick: calendarReminderTick, cleanup: calendarReminderCleanup } = require("./cron/notifications/calendar-reminder-cron");
-const { refreshTick: igRefreshTick } = require("./cron/notifications/instagram-refresh-cron");
 
 // ═══════════════════════════════════════════════════════
 // ЗАПУСК СЕРВЕРА
@@ -337,10 +336,6 @@ server.listen(configServer.port, () => {
 		timezone: "Europe/Kyiv",
 	});
 
-	cron.schedule("30 4 * * *", () => igRefreshTick().catch((e) => console.error("[ig-refresh]", e)), {
-		timezone: "Europe/Kyiv",
-	});
-
 	// ─── НАГАДУВАННЯ КАЛЕНДАРЯ ───────────────────────
 	let isReminderRunning = false;
 
@@ -360,6 +355,18 @@ server.listen(configServer.port, () => {
 				isReminderRunning = false;
 			}
 		},
+		{
+			timezone: "Europe/Kyiv",
+		}
+	);
+
+	// Щодня о 04:30 — продовження long-lived IG-токенів (нова схема).
+	cron.schedule(
+		"30 4 * * *",
+		() =>
+			require("./controllers/contact-center/instagram-refresh")
+				.refreshTokens()
+				.catch((e) => console.error("[ig-refresh]", e)),
 		{
 			timezone: "Europe/Kyiv",
 		}
