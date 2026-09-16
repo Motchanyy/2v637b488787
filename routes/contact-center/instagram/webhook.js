@@ -72,10 +72,34 @@ router.post("/instagram/webhook", express.raw({ type: "*/*" }), async (req, res)
 		const igId = String(entry.id); // ← який акаунт отримав повідомлення
 		const events = entry.messaging || [];
 		for (const ev of events) {
-			processEvent(igId, ev).catch((err) => {
-				logging.error(err);
-				console.error("[instagram] processEvent:", err.message);
-			});
+			try {
+				await handleIncoming(account.id_channel, "instagram", type.normalize(entry, ev));
+
+				// Збагачення профілю контакта — асинхронно, не блокує обробку вебхука.
+				// Тільки для вхідних від клієнта (не echo/read/reaction).
+				const senderId = ev.sender && ev.sender.id ? String(ev.sender.id) : null;
+				const isIncoming = ev.message && !ev.message.is_echo && senderId && senderId !== igUserId;
+
+				console.log("[ig-enrich] перевірка: senderId=" + senderId + " igUserId=" + igUserId + " isIncoming=" + isIncoming + " typeof enrichContact=" + typeof type.enrichContact);
+
+				if (isIncoming) {
+					setImmediate(function () {
+						connection_pool
+							.getConnection()
+							.then(async function (c) {
+								try {
+									await type.enrichContact(c, account.id_channel, senderId);
+								} finally {
+									c.release();
+								}
+							})
+							.catch(function () {});
+					});
+				}
+			} catch (e) {
+				console.error("instagram webhook:", e.message);
+				logging.error(e);
+			}
 		}
 	}
 });

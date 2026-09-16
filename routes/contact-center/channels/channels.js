@@ -19,6 +19,7 @@ router.post("/api/contact-center/channels/list/", isAuth, canView, channelsContr
 router.post("/api/contact-center/channels/create/", isAuth, canAdd, channelsControllers.create);
 router.post("/api/contact-center/channels/:id/update/", isAuth, canEdit, channelsControllers.update);
 router.post("/api/contact-center/channels/:id/test/", isAuth, canEdit, channelsControllers.test);
+router.post("/api/contact-center/channels/:id/refresh/", isAuth, canEdit, channelsControllers.refresh);
 router.post("/api/contact-center/channels/:id/status/", isAuth, canEdit, channelsControllers.status);
 router.post("/api/contact-center/channels/:id/delete/", isAuth, canDelete, channelsControllers.remove);
 
