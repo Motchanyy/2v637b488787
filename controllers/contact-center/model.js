@@ -136,9 +136,10 @@ async function reopenConversation(conn, idConversation) {
  * зовнішні (telegram/instagram/facebook/discord) — pending для воркера.
  */
 async function insertAttachments(conn, ctx, attachments) {
-	if (!attachments || !attachments.length) return 0;
+	if (!attachments || !attachments.length) return { count: 0, pendingIds: [] };
 
 	let order = 0;
+	const pendingIds = [];
 
 	for (const a of attachments) {
 		const type = ATTACH_TYPES.indexOf(a.type) === -1 ? "file" : a.type;
@@ -147,7 +148,7 @@ async function insertAttachments(conn, ctx, attachments) {
 		// Файл уже в нас (веб-чат, або відправка менеджером) — качати нічого
 		const status = a.path ? "done" : sourceType === "none" ? "skipped" : "pending";
 
-		await conn.execute(
+		const [r] = await conn.execute(
 			`INSERT INTO ${T_ATTACH}
                 (id_message, id_conversation, id_channel, type, subtype, sort_order,
                  path, thumb_path, file_name, mime, size,
@@ -157,9 +158,11 @@ async function insertAttachments(conn, ctx, attachments) {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[ctx.id_message, ctx.id_conversation, ctx.id_channel, type, a.subtype || null, order++, a.path || null, a.thumb_path || null, a.file_name || null, a.mime || null, a.size || null, a.width || null, a.height || null, a.duration || null, sourceType, a.source_ref || null, a.source_expires || null, status, status === "pending" ? new Date() : null]
 		);
+
+		if (status === "pending") pendingIds.push(r.insertId);
 	}
 
-	return order;
+	return { count: order, pendingIds: pendingIds };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -238,7 +241,7 @@ async function addIncoming(payload) {
 
 		const idMessage = result.insertId;
 
-		await insertAttachments(conn, { id_message: idMessage, id_conversation: conv.id, id_channel: payload.id_channel }, attachments);
+		const attInfo = await insertAttachments(conn, { id_message: idMessage, id_conversation: conv.id, id_channel: payload.id_channel }, attachments);
 
 		const preview = buildPreview(type, m.subtype, m.text, attachments);
 
@@ -263,13 +266,15 @@ async function addIncoming(payload) {
 
 		await conn.commit();
 
-		// Файли качаємо після коміту — повідомлення вже видиме в інтерфейсі
-		if (attachments.some((a) => !a.path && a.source_type && a.source_type !== "none")) {
-			setImmediate(function () {
-				require("./files")
-					.processQueue(10)
-					.catch(function () {});
-			});
+		// Кожне вкладення — окреме завдання черги, поставлене ПІСЛЯ коміту.
+		// Адресне за id → без гонок «побачити pending у моменті».
+		if (attInfo.pendingIds.length) {
+			const attQueue = require("./attachments-queue");
+			for (const attId of attInfo.pendingIds) {
+				attQueue.enqueueAttachment(attId).catch(function (e) {
+					console.error("[cc-att-enqueue]", e && e.message);
+				});
+			}
 		}
 
 		return {
@@ -322,7 +327,7 @@ async function addOutgoing(payload) {
 
 		const idMessage = result.insertId;
 
-		await insertAttachments(conn, { id_message: idMessage, id_conversation: conv.id, id_channel: conv.id_channel }, attachments);
+		const attInfo = await insertAttachments(conn, { id_message: idMessage, id_conversation: conv.id, id_channel: conv.id_channel }, attachments);
 
 		await touchConversation(conn, conv.id, {
 			id: idMessage,
@@ -333,6 +338,15 @@ async function addOutgoing(payload) {
 		});
 
 		await conn.commit();
+
+		if (attInfo && attInfo.pendingIds.length) {
+			const attQueue = require("./attachments-queue");
+			for (const attId of attInfo.pendingIds) {
+				attQueue.enqueueAttachment(attId).catch(function (e) {
+					console.error("[cc-att-enqueue]", e && e.message);
+				});
+			}
+		}
 
 		return { id_message: idMessage, id_conversation: conv.id, id_channel: conv.id_channel, date_add: dateAdd };
 	} catch (error) {
@@ -516,8 +530,32 @@ async function markOutgoingRead(idConversation, upToMessageId) {
 	return r.affectedRows;
 }
 
+/**
+ * Прочитання по source_id (mid) — для каналів, що шлють read з ID повідомлення
+ * (Instagram). Позначає read вказане повідомлення і всі старіші вихідні до нього.
+ */
+async function markOutgoingReadBySourceId(idChannel, sourceId) {
+	// Знаходимо наше повідомлення по source_id
+	const [rows] = await connection_pool.execute(`SELECT id, id_conversation FROM ${T_MESSAGES} WHERE id_channel = ? AND source_id = ? AND direction = 'out' LIMIT 1`, [idChannel, String(sourceId)]);
+
+	if (!rows.length) return { affected: 0, id_conversation: null };
+
+	const msg = rows[0];
+
+	const [r] = await connection_pool.execute(
+		`UPDATE ${T_MESSAGES}
+            SET status = 'read'
+          WHERE id_conversation = ? AND direction = 'out'
+            AND id <= ? AND status IN ('sent','delivered')`,
+		[msg.id_conversation, msg.id]
+	);
+
+	return { affected: r.affectedRows, id_conversation: msg.id_conversation, up_to_id: msg.id };
+}
+
 module.exports = {
 	markOutgoingRead,
+	markOutgoingReadBySourceId,
 	getConversationByToken,
 	getMessages,
 	findOrCreateContact,

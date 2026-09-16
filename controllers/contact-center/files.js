@@ -210,4 +210,28 @@ async function processQueue(limit) {
 	}
 }
 
-module.exports = { processQueue, processAttachment, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };
+/** Обробляє одне вкладення по id. Викликається воркером черги cc:attachments. */
+async function processOne(attachmentId) {
+	const [rows] = await connection_pool.query(
+		`SELECT a.id, a.id_message, a.id_conversation, a.id_channel, a.type, a.subtype,
+                a.sort_order, a.file_name, a.mime, a.source_type, a.source_ref, a.attempts, a.status,
+                c.url_token, ch.type AS channel_type
+         FROM ${T_ATTACH} AS a
+         INNER JOIN ${P}contact_center_conversations AS c ON c.id = a.id_conversation
+         INNER JOIN ${P}contact_center_channels AS ch ON ch.id = a.id_channel
+         WHERE a.id = ? LIMIT 1`,
+		[attachmentId]
+	);
+
+	const att = rows[0];
+	if (!att) return false;
+	// Вже оброблене або не потребує завантаження — пропускаємо (ідемпотентність)
+	if (att.status === "done" || att.status === "skipped") return true;
+
+	const ok = await processAttachment(att);
+	// Кидаємо помилку, щоб BullMQ зробив ретрай згідно backoff
+	if (!ok) throw new Error("attachment " + attachmentId + " download failed");
+	return true;
+}
+
+module.exports = { processQueue, processAttachment, processOne, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };

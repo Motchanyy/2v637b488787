@@ -337,7 +337,20 @@ module.exports = {
 	// entry — елемент payload.entry[]; ev — елемент entry.messaging[].
 	// Повертає null, якщо подія нас не стосується (echo, реакції, read, порожнє).
 	normalize(entry, ev) {
-		if (!ev || !ev.message) return null;
+		if (!ev) return null;
+
+		// Подія прочитання: клієнт прочитав наші вихідні.
+		// Instagram Login шле read.mid (конкретне повідомлення).
+		if (ev.read) {
+			return {
+				kind: "read",
+				sender_id: ev.sender && ev.sender.id ? String(ev.sender.id) : null,
+				mid: ev.read.mid || null,
+				watermark: ev.read.watermark || null,
+			};
+		}
+
+		if (!ev.message) return null;
 
 		const msg = ev.message;
 
