@@ -239,6 +239,39 @@ const channelsControllers = {
 		}
 	},
 
+	// Ручне оновлення Instagram-токена (кнопка у формі каналу)
+	async refresh(req, res) {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ status: "error", message: "Невірний ID" });
+
+		try {
+			// Тип каналу — оновлення підтримує лише instagram
+			const connection_pool = require("../../../config/database/connection_pool");
+			const config = require("../../../config/config");
+			const P = config.get("configDatabase").prefix;
+
+			const [rows] = await connection_pool.query(`SELECT type FROM ${P}contact_center_channels WHERE id = ? AND deleted = 0 LIMIT 1`, [id]);
+
+			if (!rows.length) return res.status(404).json({ status: "error", message: "Канал не знайдено" });
+			if (rows[0].type !== "instagram") {
+				return res.status(400).json({ status: "error", message: "Оновлення токена підтримує лише Instagram" });
+			}
+
+			const igRefresh = require("../instagram-refresh");
+			const result = await igRefresh.refreshOne(id);
+
+			if (result.ok) {
+				const days = Math.round((result.expires_in || 0) / 86400);
+				return res.status(200).json({ status: "success", message: "Токен оновлено. Дійсний ще ~" + days + " днів." });
+			}
+
+			return res.status(200).json({ status: "error", message: result.error || "Не вдалося оновити токен" });
+		} catch (error) {
+			console.error("channel refresh:", error.message);
+			return res.status(500).json({ status: "error", message: "Помилка сервера" });
+		}
+	},
+
 	// ── М'яке видалення ──
 	remove: async (req, res) => {
 		const id = parseInt(req.params.id, 10);

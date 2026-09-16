@@ -272,7 +272,7 @@ const conversationsControllers = {
 		}
 	},
 
-		// ── Позначити прочитаним ──
+	// ── Позначити прочитаним ──
 	// Викликається не лише при відкритті сторінки, а й на кожне нове
 	// повідомлення у видимому діалозі — інакше клієнт не бачить другу галочку.
 	read: async (req, res) => {
@@ -381,6 +381,7 @@ const conversationsControllers = {
 						type: attachType,
 						url: config.get("configServer").url + publicPath,
 						caption: caption,
+						size: req.file.size,
 					});
 				} finally {
 					conn.release();
