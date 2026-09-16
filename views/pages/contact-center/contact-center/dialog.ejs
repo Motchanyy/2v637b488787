@@ -136,6 +136,21 @@
 				height: 72px;
 				font-size: 1.6rem;
 			}
+
+			.msg-reaction {
+				position: absolute;
+				bottom: -10px;
+				right: 8px;
+				background: #fff;
+				border-radius: 10px;
+				padding: 0 4px;
+				font-size: 0.85rem;
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+				line-height: 1.4;
+			}
+			.msg-bubble {
+				position: relative;
+			}
 		</style>
 	</head>
 
@@ -605,13 +620,16 @@
 			// тому Discord чи Facebook не додають сюди жодної гілки.
 			// ================================================================
 			function renderAttachment(a) {
-				// Файл ще качається з каналу до нас
-				if (a.status === "pending" || a.status === "processing") {
-					return '<div class="msg-attach"><div class="attach-pending">' + T.attachLoading + "</div></div>";
+				// Явна помилка завантаження — показуємо тільки при status='failed'
+				if (a.status === "failed") {
+					return '<div class="msg-attach"><div class="attach-pending text-danger">' + T.attachFailed + "</div></div>";
 				}
 
-				if (a.status === "failed" || !a.path) {
-					return '<div class="msg-attach"><div class="attach-pending text-danger">' + T.attachFailed + "</div></div>";
+				// Файлу ще немає (качається з каналу) — показуємо стан завантаження,
+				// а не помилку. Спрацьовує і коли status='pending'/'processing',
+				// і коли вкладення прийшло по socket ще без status і без path.
+				if (!a.path) {
+					return '<div class="msg-attach"><div class="attach-pending">' + T.attachLoading + "</div></div>";
 				}
 
 				const url = escapeHtml(a.path);
@@ -1040,6 +1058,50 @@
 				const holders = row.querySelectorAll(".msg-attach");
 				const holder = holders[data.sort_order || 0];
 				if (holder) holder.outerHTML = renderAttachment(data.attachment);
+			});
+
+			// Клієнт прочитав вихідні до up_to — перемальовуємо галочки на сині
+			socket.on("cc:read_receipt", function (data) {
+				if (!data || Number(data.id_conversation) !== CONV_ID) return;
+
+				const upTo = Number(data.up_to) || 0;
+
+				// Проходимо по вихідних повідомленнях з id <= up_to і статусом sent/delivered
+				document.querySelectorAll("[data-msg-id]").forEach(function (row) {
+					const mid = Number(row.getAttribute("data-msg-id"));
+					if (!mid || mid > upTo) return;
+
+					const icon = row.querySelector(".msg-status");
+					if (!icon) return; // не вихідне або вже не має галочки
+
+					// Замінюємо на дві сині
+					icon.className = "fa-solid fa-check-double text-primary msg-status";
+					icon.setAttribute("title", T.statusRead);
+				});
+			});
+
+			// Реакція клієнта на повідомлення
+			socket.on("cc:reaction", function (data) {
+				if (!data || Number(data.id_conversation) !== CONV_ID) return;
+
+				const row = document.querySelector('[data-msg-id="' + data.id_message + '"]');
+				if (!row) return;
+
+				let badge = row.querySelector(".msg-reaction");
+
+				if (!data.reaction) {
+					// Реакцію прибрано
+					if (badge) badge.remove();
+					return;
+				}
+
+				if (!badge) {
+					badge = document.createElement("span");
+					badge.className = "msg-reaction";
+					const bubble = row.querySelector(".msg-bubble") || row;
+					bubble.appendChild(badge);
+				}
+				badge.textContent = data.reaction;
 			});
 		</script>
 	</body>
