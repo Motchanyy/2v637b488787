@@ -1,5 +1,4 @@
 const express = require("express");
-const TelegramBot = require("node-telegram-bot-api");
 const router = express.Router();
 
 // Controllers
@@ -49,6 +48,7 @@ router.post("/api/contact-center/get-counters/", authorizationControllers.isAuth
 // Діалог
 router.get("/contact-center/chat/:token/", authorizationControllers.isAuthenticated, conversationsControllers.page);
 router.post("/api/contact-center/chat/:id/messages/", authorizationControllers.isAuthenticated, conversationsControllers.messages);
+router.post("/api/contact-center/chat/:id/media/", authorizationControllers.isAuthenticated, conversationsControllers.media);
 router.post("/api/contact-center/chat/:id/send/", authorizationControllers.isAuthenticated, conversationsControllers.send);
 router.post("/api/contact-center/chat/:id/read/", authorizationControllers.isAuthenticated, conversationsControllers.read);
 router.post("/api/contact-center/chat/:id/upload/", authorizationControllers.isAuthenticated, ccUpload.single("file"), conversationsControllers.upload);
@@ -56,38 +56,6 @@ router.post("/api/contact-center/chat/:id/command/", authorizationControllers.is
 router.post("/api/contact-center/chat/:id/assign/", authorizationControllers.isAuthenticated, conversationsControllers.assign);
 router.post("/api/contact-center/chat/:id/status/", authorizationControllers.isAuthenticated, conversationsControllers.status);
 
-router.post("/api/contact-center/telegram/settings/working-hours/select/", async (req, res) => {
-	if (!["127.0.0.1", "::1"].includes(req.ip.replace("::ffff:", ""))) {
-		return res.status(403).json({ message: "Forbidden: Access denied" });
-	}
-
-	connection.query("SELECT working_hours FROM " + configDatabase.prefix + "telegram_settings_working_hours WHERE id = 1", function (error, result) {
-		if (error) {
-			console.log(error);
-			logging.error(error);
-		}
-
-		res.send(result[0].working_hours);
-	});
-});
-router.post("/api/contact-center/telegram/settings/working-hours/insert/", async (req, res) => {
-	var working_hours = req.body.working_hours;
-
-	console.log(working_hours);
-
-	if (!["127.0.0.1", "::1"].includes(req.ip.replace("::ffff:", ""))) {
-		return res.status(403).json({ message: "Forbidden: Access denied" });
-	}
-
-	connection.query("UPDATE " + configDatabase.prefix + "telegram_settings_working_hours SET working_hours = ? WHERE id = 1", [working_hours], function (error, result) {
-		if (error) {
-			console.log(error);
-			logging.error(error);
-		}
-
-		res.send({ success: "success" });
-	});
-});
 // END POST
 
 // ── Веб-чат: сторінка діалогу (по непрозорому url_token) ──

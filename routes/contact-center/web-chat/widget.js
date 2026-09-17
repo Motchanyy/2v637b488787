@@ -137,7 +137,6 @@
       .mfb-component__button--child { position: relative; display: flex; align-items: center;
         justify-content: center; width: ${BTN}px; height: ${BTN}px; color: #fff; border: 0;
         cursor: pointer; text-decoration: none;
-        box-shadow: 0 0 4px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.28);
         transition: transform .15s ease; }
       .mfb-component__button--child:hover { transform: scale(1.06); }
       .mfb-component__button--child svg { width: 24px; height: 24px; fill: #fff; }

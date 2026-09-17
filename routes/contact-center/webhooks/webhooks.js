@@ -94,6 +94,7 @@ async function handleIncoming(idChannel, channelType, normalized) {
 		message: Object.assign({ id: result.id_message, direction: "in", status: "delivered" }, normalized.message, {
 			attachments: normalized.message.attachments || [],
 			date_add: formatLocal(normalized.message.date_add || new Date()),
+			reply_text: result.reply_text || null,
 		}),
 	});
 }
@@ -121,7 +122,31 @@ router.post(["/api/contact-center/webhook/telegram/:secret/", "/api/contact-cent
 		if (Number(rows[0].status) !== 1) return;
 
 		const type = types.get("telegram");
-		await handleIncoming(rows[0].id_channel, "telegram", type.normalize(req.body || {}));
+		const update = req.body || {};
+		const normalized = type.normalize(update);
+		await handleIncoming(rows[0].id_channel, "telegram", normalized);
+
+		// Аватар контакта — асинхронно, не блокує обробку
+		const msg = update.message || update.edited_message;
+		const chatId = msg && msg.chat && msg.chat.type === "private" ? msg.chat.id : null;
+
+		if (chatId && normalized && typeof type.enrichContact === "function") {
+			const idChannel = rows[0].id_channel;
+			setImmediate(function () {
+				connection_pool
+					.getConnection()
+					.then(async function (c) {
+						try {
+							await type.enrichContact(c, idChannel, chatId);
+						} finally {
+							c.release();
+						}
+					})
+					.catch(function (e) {
+						console.error("[tg-enrich]", e.message);
+					});
+			});
+		}
 	} catch (error) {
 		console.error("telegram webhook:", error.message);
 		logging.error(error);
