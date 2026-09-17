@@ -272,7 +272,7 @@ async function importLocalFile(absSourcePath, channelType, urlToken, fileName) {
 	try {
 		if (!absSourcePath || !fsp.existsSync(absSourcePath)) return null;
 
-		const relDir = conversationDir(channelType, urlToken, "in");
+		const relDir = path.join(String(channelType), String(urlToken));
 		const destDir = pathMod.join(UPLOAD_ROOT, relDir);
 		fsp.mkdirSync(destDir, { recursive: true });
 

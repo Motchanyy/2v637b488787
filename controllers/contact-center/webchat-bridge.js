@@ -8,7 +8,7 @@ const types = require("./channels/index");
 
 // Корінь фізичного сховища веб-чату.
 // __dirname = controllers/contact-center → два рівні вгору = корінь проєкту.
-const WC_UPLOAD_DIR = path.join(__dirname, "..", "..", "assets", "web-chat-uploads");
+const WC_UPLOAD_DIR = path.join(process.cwd(), "assets", "web-chat-uploads");
 
 const P = config.get("configDatabase").prefix;
 
@@ -75,7 +75,7 @@ async function mirror(siteId, roomId, direction, msg) {
 				// Рядок "YYYY-MM-DD HH:MM:SS" — той самий формат, що віддає MySQL,
 				// інакше parseDate() на фронті отримає ISO і дасть Invalid Date
 				date_add: new Date(msg.date_add || Date.now()).toISOString().slice(0, 19).replace("T", " "),
-				attachments: msg.attachment ? [await buildAttachment(msg.attachment)] : [],
+				attachments: msg.attachment ? [await buildAttachment(msg.attachment, roomId)] : [],
 			},
 		};
 
@@ -109,12 +109,12 @@ async function mirror(siteId, roomId, direction, msg) {
  * Переносить веб-чатове вкладення у сховище CRM (стабільний /uploads-шлях).
  * Фолбек: якщо файл не знайдено — лишаємо підписаний URL (краще, ніж нічого).
  */
-async function buildAttachment(att) {
+async function buildAttachment(att, roomId) {
 	const type = att.kind === "image" ? "image" : "file";
 
 	if (att.rel_path) {
 		const abs = path.join(WC_UPLOAD_DIR, att.rel_path);
-		const imported = await require("./files").importLocalFile(abs, "webchat", "shared", att.name);
+		const imported = await require("./files").importLocalFile(abs, "web-chat", roomId, att.name);
 		if (imported) {
 			return {
 				type: type,

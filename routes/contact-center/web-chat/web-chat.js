@@ -75,7 +75,7 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MAX_TEXT_LEN = 4000;
-const WC_UPLOAD_DIR = path.join(__dirname, "..", "..", "assets", "web-chat-uploads");
+const WC_UPLOAD_DIR = path.join(process.cwd(), "assets", "web-chat-uploads");
 const FILE_URL_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
@@ -694,8 +694,8 @@ async function deleteChat(siteId, roomId) {
 				const p = m && m.attachment && m.attachment.path;
 				const rel = p ? safeRelPath(p) : null;
 				if (rel) {
-					const abs = path.join(UPLOAD_DIR, rel);
-					if (abs.startsWith(path.resolve(UPLOAD_DIR) + path.sep) && fs.existsSync(abs)) fs.unlinkSync(abs);
+					const abs = path.join(WC_UPLOAD_DIR, rel);
+					if (abs.startsWith(path.resolve(WC_UPLOAD_DIR) + path.sep) && fs.existsSync(abs)) fs.unlinkSync(abs);
 				}
 			} catch {}
 		});
@@ -2233,8 +2233,8 @@ router.post("/chat/upload", (req, res) => {
 			}
 
 			let auth = null;
-			const refHost = hostOf(req.headers.referer || "");
-			const fromOurFrame = refHost === OUR_HOST || refHost === "www." + OUR_HOST;
+			const refHost = hostOf(req.headers.referer || "") || hostOf(req.headers.origin || "");
+			const fromOurFrame = !refHost || refHost === OUR_HOST || refHost === "www." + OUR_HOST;
 			const sites = await getSites().catch(() => new Map());
 			if (role === "operator") {
 				// операторський аплоуд — поки за наявністю сайту (JWT-гейт додамо з фронтом)
@@ -2268,7 +2268,7 @@ router.post("/chat/upload", (req, res) => {
 			if (!contentMatchesDeclared(declared, file.buffer)) return res.status(415).json({ ok: false, error: "content_mismatch" });
 
 			const token = crypto.randomBytes(16).toString("hex");
-			const absDir = path.join(UPLOAD_DIR, auth.siteId, ym());
+			const absDir = path.join(WC_UPLOAD_DIR, auth.siteId, ym());
 			ensureDir(absDir);
 			const fname = token + "." + meta.ext;
 			fs.writeFileSync(path.join(absDir, fname), file.buffer);
@@ -2288,8 +2288,8 @@ router.get("/chat/file/*rest", (req, res) => {
 	const relPath = safeRelPath(Array.isArray(raw) ? raw.join("/") : raw);
 	if (!relPath) return res.status(400).send("bad path");
 	if (!verifyFileSig(relPath, req.query.exp, req.query.sig)) return res.status(403).send("forbidden");
-	const absPath = path.join(UPLOAD_DIR, relPath);
-	if (!absPath.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) return res.status(400).send("bad path");
+	const absPath = path.join(WC_UPLOAD_DIR, relPath);
+	if (!absPath.startsWith(path.resolve(WC_UPLOAD_DIR) + path.sep)) return res.status(400).send("bad path");
 	if (!fs.existsSync(absPath)) return res.status(404).send("not found");
 	const ext = path.extname(absPath).slice(1).toLowerCase();
 	const isImage = ["jpg", "png", "webp", "gif"].includes(ext);
