@@ -148,8 +148,50 @@
 				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 				line-height: 1.4;
 			}
-			.msg-bubble {
+						.msg-bubble {
 				position: relative;
+			}
+
+			.cc-media-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 4px;
+			}
+			.cc-media-grid a {
+				display: block;
+				aspect-ratio: 1;
+				overflow: hidden;
+				background: #eef0f3;
+			}
+			.cc-media-grid img,
+			.cc-media-grid video {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.cc-media-list a {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.4rem 0.5rem;
+				border-bottom: 1px solid #eef0f3;
+				color: inherit;
+				text-decoration: none;
+				font-size: 0.85rem;
+			}
+			.cc-media-list a:hover {
+				background: #f6f8fa;
+			}
+			.cc-media-pane {
+				max-height: 380px;
+				overflow-y: auto;
+				scrollbar-width: thin;
+			}
+			.cc-media-empty {
+				text-align: center;
+				color: #6c757d;
+				font-size: 0.85rem;
+				padding: 1.5rem 0;
 			}
 		</style>
 	</head>
@@ -322,7 +364,23 @@
 							</button>
 							<button type="button" class="btn btn-outline-success rounded-0 btn-status" data-status="resolved"><%= i18n.__('contact_center.dialog.resolve') %></button>
 							<button type="button" class="btn btn-outline-secondary rounded-0 btn-status" data-status="archived"><%= i18n.__('contact_center.dialog.archive') %></button>
-							<button type="button" class="btn btn-outline-primary rounded-0 btn-status" data-status="open"><%= i18n.__('contact_center.dialog.reopen') %></button>
+														<button type="button" class="btn btn-outline-primary rounded-0 btn-status" data-status="open"><%= i18n.__('contact_center.dialog.reopen') %></button>
+						</div>
+					</div>
+
+					<!-- ═══ МЕДІА ═══ -->
+					<div class="card border-primary rounded-0 mt-3">
+						<div class="card-header text-bg-primary rounded-0">Медіа</div>
+						<div class="card-body">
+							<ul class="nav nav-pills nav-fill gap-1 mb-2" role="tablist">
+								<li class="nav-item"><button class="nav-link active rounded-0 px-2 py-1" data-cc-media="image" type="button" title="Фото"><i class="fa-regular fa-image"></i></button></li>
+								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="video" type="button" title="Відео"><i class="fa-solid fa-film"></i></button></li>
+								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="audio" type="button" title="Аудіо"><i class="fa-solid fa-music"></i></button></li>
+								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="file" type="button" title="Файли"><i class="fa-regular fa-file"></i></button></li>
+							</ul>
+							<div class="cc-media-pane" id="cc_media_body">
+								<div class="cc-media-empty">Завантаження…</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -570,6 +628,9 @@
 			const CONV_ID = <%= data.conversation.id %>;
 			const CURRENT_USER_ID = Number("<%= user.userId %>");
 			const isUk = "<%= i18n.__('lang_iso') %>" === "uk";
+			const CHANNEL_TYPE = "<%= data.conversation.channel_type %>";
+			// Канали, що НЕ повідомляють про прочитання — галочки статусу не показуємо
+			const NO_READ_STATUS = ["telegram"];
 
 			let convManagerId = <%= data.conversation.id_manager === null ? 'null' : data.conversation.id_manager %>;
 
@@ -703,13 +764,15 @@
 				if (out) {
 					if (m.manager_name) meta = escapeHtml(m.manager_name) + " · " + meta;
 
-					// Годинник — у процесі, одна галочка — надіслано,
-					// дві сірі — доставлено, дві сині — прочитано
+					const showStatus = NO_READ_STATUS.indexOf(CHANNEL_TYPE) === -1;
+
+					// pending/failed показуємо завжди (це наш стан, не залежить від каналу).
+					// Галочки прочитання — лише для каналів, що його повідомляють.
 					if (m.status === "pending") meta += ' <i class="fa-regular fa-clock" title="' + T.pending + '"></i>';
 					else if (m.status === "failed") meta += ' <i class="fa-solid fa-triangle-exclamation text-danger" title="' + escapeHtml(m.error || T.failed) + '"></i>';
-					else if (m.status === "read") meta += ' <i class="fa-solid fa-check-double text-primary msg-status" title="' + T.statusRead + '"></i>';
-					else if (m.status === "delivered") meta += ' <i class="fa-solid fa-check-double msg-status" title="' + T.statusDelivered + '"></i>';
-					else meta += ' <i class="fa-solid fa-check msg-status" title="' + T.statusSent + '"></i>';
+					else if (showStatus && m.status === "read") meta += ' <i class="fa-solid fa-check-double text-primary msg-status" title="' + T.statusRead + '"></i>';
+					else if (showStatus && m.status === "delivered") meta += ' <i class="fa-solid fa-check-double msg-status" title="' + T.statusDelivered + '"></i>';
+					else if (showStatus) meta += ' <i class="fa-solid fa-check msg-status" title="' + T.statusSent + '"></i>';
 				}
 
 				// Реакція клієнта (emoji під бульбашкою) — при завантаженні з БД
@@ -1106,6 +1169,88 @@
 				}
 				badge.textContent = data.reaction;
 			});
+		</script>
+				<script>
+			// ================================================================
+			// МЕДІАТЕКА — окрема картка. Лениве завантаження при першому показі.
+			// ================================================================
+			(function () {
+				let loaded = false;
+				let mediaData = null;
+				let activeType = "image";
+
+				const body = document.getElementById("cc_media_body");
+				if (!body) return;
+
+				function fmtSize(s) {
+					return s ? " (" + Math.round(s / 1024) + " KB)" : "";
+				}
+
+				function render(type) {
+					activeType = type;
+					const items = (mediaData && mediaData[type]) || [];
+
+					if (!items.length) {
+						body.innerHTML = '<div class="cc-media-empty">Немає файлів</div>';
+						return;
+					}
+
+					if (type === "image" || type === "video") {
+						let html = '<div class="cc-media-grid">';
+						items.forEach(function (a) {
+							const url = escapeHtml(a.path);
+							if (type === "image") {
+								const src = a.thumb_path ? escapeHtml(a.thumb_path) : url;
+								html += '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + src + '" loading="lazy" alt=""></a>';
+							} else {
+								html += '<a href="' + url + '" target="_blank" rel="noopener"><video src="' + url + '" preload="metadata"></video></a>';
+							}
+						});
+						html += "</div>";
+						body.innerHTML = html;
+						return;
+					}
+
+					let html = '<div class="cc-media-list">';
+					items.forEach(function (a) {
+						const url = escapeHtml(a.path);
+						const name = escapeHtml(a.file_name || url.split("/").pop());
+						const icon = type === "audio" ? "fa-solid fa-music" : "fa-regular fa-file";
+						html += '<a href="' + url + '" target="_blank" rel="noopener"><i class="' + icon + '"></i><span class="text-truncate">' + name + fmtSize(a.size) + "</span></a>";
+					});
+					html += "</div>";
+					body.innerHTML = html;
+				}
+
+				async function loadMedia() {
+					if (loaded) return;
+					try {
+						const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/media/", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({}),
+						});
+						mediaData = await res.json();
+						loaded = true;
+						render(activeType);
+					} catch (err) {
+						body.innerHTML = '<div class="cc-media-empty text-danger">' + T.loadError + "</div>";
+					}
+				}
+
+				document.querySelectorAll("[data-cc-media]").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						document.querySelectorAll("[data-cc-media]").forEach(function (b) {
+							b.classList.remove("active");
+						});
+						this.classList.add("active");
+						render(this.getAttribute("data-cc-media"));
+					});
+				});
+
+				// Картка видима одразу → вантажимо при завантаженні сторінки
+				loadMedia();
+			})();
 		</script>
 	</body>
 </html>
