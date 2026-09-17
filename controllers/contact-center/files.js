@@ -260,4 +260,36 @@ async function downloadAvatar(url, nameKey, ext) {
 	}
 }
 
-module.exports = { processQueue, processAttachment, processOne, downloadAvatar, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };
+/**
+ * Переносить уже наявний локальний файл (напр. веб-чату) у сховище CRM.
+ * Обидва стореджі локальні — копіюємо на диску, без мережі.
+ * Повертає публічний шлях (/uploads/...) або null.
+ */
+async function importLocalFile(absSourcePath, channelType, urlToken, fileName) {
+	const fsp = require("fs");
+	const pathMod = require("path");
+
+	try {
+		if (!absSourcePath || !fsp.existsSync(absSourcePath)) return null;
+
+		const relDir = conversationDir(channelType, urlToken, "in");
+		const destDir = pathMod.join(UPLOAD_ROOT, relDir);
+		fsp.mkdirSync(destDir, { recursive: true });
+
+		const ext = (pathMod.extname(absSourcePath) || "").toLowerCase().replace(/[^.a-z0-9]/g, "") || ".bin";
+		const name = require("crypto").randomBytes(16).toString("hex") + ext;
+		const destAbs = pathMod.join(destDir, name);
+
+		fsp.copyFileSync(absSourcePath, destAbs);
+
+		const stat = fsp.statSync(destAbs);
+		const publicPath = PUBLIC_PREFIX + "/" + relDir.replace(/\\/g, "/") + "/" + name;
+
+		return { path: publicPath, size: stat.size };
+	} catch (e) {
+		console.error("importLocalFile:", e.message);
+		return null;
+	}
+}
+
+module.exports = { processQueue, importLocalFile, processAttachment, processOne, downloadAvatar, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };

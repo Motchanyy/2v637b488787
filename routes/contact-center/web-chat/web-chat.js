@@ -38,7 +38,23 @@ const pool = connection_pool;
 // ─── Секрети/конфіг чату (з config CRM, не з .env) ───────────────────────────
 // TODO: винести значення у config-json. Поки читаємо з configServer з фолбеком.
 const cfgServer = config.get("configServer") || {};
-const OUR_HOST = cfgServer.webChatHost || cfgServer.host || "";
+function hostFromUrl(u) {
+	try {
+		return new URL(u).hostname.toLowerCase();
+	} catch {
+		return "";
+	}
+}
+const OUR_HOST =
+	cfgServer.webChatHost ||
+	cfgServer.host ||
+	(function () {
+		try {
+			return new URL(process.env.APP_URL).hostname.toLowerCase();
+		} catch {
+			return "";
+		}
+	})();
 const FILE_SIGN_SECRET = cfgServer.webChatFileSecret || "";
 const VAPID_PUBLIC = cfgServer.webChatVapidPublic || "";
 const VAPID_PRIVATE = cfgServer.webChatVapidPrivate || "";
@@ -59,7 +75,7 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MAX_TEXT_LEN = 4000;
-const UPLOAD_DIR = path.join(__dirname, "..", "..", "..", "assets", "web-chat-uploads");
+const WC_UPLOAD_DIR = path.join(__dirname, "..", "..", "assets", "web-chat-uploads");
 const FILE_URL_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
@@ -1507,7 +1523,7 @@ function bindSocket(nsp) {
 					const reopened = await reopenIfClosed(d.siteId, d.roomId).catch(() => false);
 					if (reopened) io.to(`operators_${d.siteId}`).emit("operator:conv_state", { roomId: d.roomId, siteId: d.siteId, status: "open", operatorId: null });
 
-					const attOut = att ? { url: signFileUrl(att.path), name: att.name, size: att.size, mime: att.mime, kind: att.kind } : null;
+					const attOut = att ? { url: signFileUrl(att.path), rel_path: att.path, name: att.name, size: att.size, mime: att.mime, kind: att.kind } : null;
 
 					let _domain = d.siteId;
 					try {
@@ -1521,11 +1537,7 @@ function bindSocket(nsp) {
 
 					// Дзеркалимо у спільну схему контакт-центру, щоб діалог
 					// з'явився у загальному списку поряд з Telegram
-					ccBridge
-						.mirror(d.siteId, d.roomId, "in", { id, text: clean, attachment: attOut, date_add: new Date() })
-						.then((r) => console.log("[WC mirror] result:", r ? "conv " + r.id_conversation : "null"))
-						.catch((e) => console.error("[WC mirror] FAIL:", e.message, e.stack));
-					ccBridge.mirror(d.siteId, d.roomId, "in", { id, text: clean, attachment: attOut, date_add: new Date() }).catch(() => {});
+					ccBridge.mirror(d.siteId, d.roomId, "in", { id, text: clean, attachment: attOut, date_add: new Date() }).catch((e) => console.error("[WC mirror] FAIL:", e.message));
 
 					// Єдине сховище нотифікацій: одна подія на повідомлення клієнта (спільна).
 					// Персональне прочитання — через notification_reads. type=3 (webchat).
@@ -1964,7 +1976,7 @@ function bindSocket(nsp) {
 			}
 			try {
 				const id = await saveMessage({ siteId, idChat: roomId, sender: "operator", managerId, text: clean, attachment: att });
-				const attOut = att ? { url: signFileUrl(att.path), name: att.name, size: att.size, mime: att.mime, kind: att.kind } : null;
+				const attOut = att ? { url: signFileUrl(att.path), rel_path: att.path, name: att.name, size: att.size, mime: att.mime, kind: att.kind } : null;
 				const ts = new Date().toISOString();
 				io.to(roomId).emit("client:message", { id, text: clean, attachment: attOut, timestamp: ts });
 				for (const [, s] of io.sockets) {
@@ -2232,6 +2244,18 @@ router.post("/chat/upload", (req, res) => {
 				if (visitorId) auth = { siteId };
 			}
 			if (!auth) {
+				console.log(
+					"[WC upload 403]",
+					JSON.stringify({
+						role: role,
+						uid_ok: UID_RE.test(uid || ""),
+						ticket_ok: verifyUploadTicket(req.headers["x-upload-ticket"], uid, siteId),
+						refHost: hostOf(req.headers.referer || ""),
+						OUR_HOST: OUR_HOST,
+						fromOurFrame: fromOurFrame,
+						site_known: sites.has(siteId),
+					})
+				);
 				noteFail(ip);
 				return res.status(403).json({ ok: false, error: "forbidden" });
 			}

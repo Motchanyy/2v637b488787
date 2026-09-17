@@ -1,9 +1,14 @@
+const path = require("path");
 const connection_pool = require("../../config/database/connection_pool");
 const config = require("../../config/config");
 const logging = require("../../logging/logging");
 const model = require("./model");
 const realtime = require("./realtime");
 const types = require("./channels/index");
+
+// Корінь фізичного сховища веб-чату.
+// __dirname = controllers/contact-center → два рівні вгору = корінь проєкту.
+const WC_UPLOAD_DIR = path.join(__dirname, "..", "..", "assets", "web-chat-uploads");
 
 const P = config.get("configDatabase").prefix;
 
@@ -70,19 +75,7 @@ async function mirror(siteId, roomId, direction, msg) {
 				// Рядок "YYYY-MM-DD HH:MM:SS" — той самий формат, що віддає MySQL,
 				// інакше parseDate() на фронті отримає ISO і дасть Invalid Date
 				date_add: new Date(msg.date_add || Date.now()).toISOString().slice(0, 19).replace("T", " "),
-				attachments: msg.attachment
-					? [
-							{
-								type: msg.attachment.kind === "image" ? "image" : "file",
-								// Файл уже лежить у нас — качати не треба
-								path: msg.attachment.url || null,
-								file_name: msg.attachment.name || null,
-								mime: msg.attachment.mime || null,
-								size: msg.attachment.size || null,
-								source_type: "none",
-							},
-						]
-					: [],
+				attachments: msg.attachment ? [await buildAttachment(msg.attachment)] : [],
 			},
 		};
 
@@ -110,6 +103,39 @@ async function mirror(siteId, roomId, direction, msg) {
 		logging.error(error);
 		return null;
 	}
+}
+
+/**
+ * Переносить веб-чатове вкладення у сховище CRM (стабільний /uploads-шлях).
+ * Фолбек: якщо файл не знайдено — лишаємо підписаний URL (краще, ніж нічого).
+ */
+async function buildAttachment(att) {
+	const type = att.kind === "image" ? "image" : "file";
+
+	if (att.rel_path) {
+		const abs = path.join(WC_UPLOAD_DIR, att.rel_path);
+		const imported = await require("./files").importLocalFile(abs, "webchat", "shared", att.name);
+		if (imported) {
+			return {
+				type: type,
+				path: imported.path, // стабільний /uploads/... — не протухає
+				file_name: att.name || null,
+				mime: att.mime || null,
+				size: imported.size || att.size || null,
+				source_type: "none",
+			};
+		}
+	}
+
+	// Фолбек — TTL-URL (як було)
+	return {
+		type: type,
+		path: att.url || null,
+		file_name: att.name || null,
+		mime: att.mime || null,
+		size: att.size || null,
+		source_type: "none",
+	};
 }
 
 // Для вихідних потрібен уже наявний діалог — створюємо через порожній прохід
