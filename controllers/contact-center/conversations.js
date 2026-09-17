@@ -472,6 +472,21 @@ const conversationsControllers = {
 		}
 	},
 
+	// ── Медіатека діалогу ──
+	media: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ error: "bad_id" });
+
+		try {
+			const data = await model.getMedia(id);
+			res.status(200).json(data);
+		} catch (error) {
+			console.error("conversation media:", error.message);
+			logging.error(error);
+			res.status(500).json({ error: "server_error" });
+		}
+	},
+
 	// ── Взяти в роботу / звільнити ──
 	assign: async (req, res) => {
 		const id = parseInt(req.params.id, 10);

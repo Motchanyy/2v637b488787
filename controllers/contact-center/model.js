@@ -223,9 +223,13 @@ async function addIncoming(payload) {
 		// Reply: клієнт відповів на конкретне повідомлення.
 		// Знаходимо наше повідомлення по source_id (mid оригіналу) → внутрішній id.
 		let idReplyTo = null;
+		let replyText = null;
 		if (m.reply_to_source_id) {
-			const [rt] = await conn.execute(`SELECT id FROM ${T_MESSAGES} WHERE id_channel = ? AND source_id = ? LIMIT 1`, [payload.id_channel, String(m.reply_to_source_id)]);
-			if (rt.length) idReplyTo = rt[0].id;
+			const [rt] = await conn.execute(`SELECT id, text FROM ${T_MESSAGES} WHERE id_channel = ? AND source_id = ? LIMIT 1`, [payload.id_channel, String(m.reply_to_source_id)]);
+			if (rt.length) {
+				idReplyTo = rt[0].id;
+				replyText = rt[0].text;
+			}
 		}
 
 		let result;
@@ -293,6 +297,7 @@ async function addIncoming(payload) {
 			url_token: conv.url_token,
 			id_manager: conv.id_manager,
 			reopened: conv.status !== "open",
+			reply_text: replyText,
 		};
 	} catch (error) {
 		await conn.rollback();
@@ -524,6 +529,43 @@ async function getMessages(idConversation, before, limit) {
 }
 
 /**
+ * Медіатека діалогу — усі вкладення, згруповані за типом.
+ * Джерело — contact_center_attachments (канало-агностично).
+ * Тільки завантажені (status='done', є path).
+ */
+async function getMedia(idConversation) {
+	const [rows] = await connection_pool.execute(
+		`SELECT id, type, path, thumb_path, file_name, mime, size, duration, date_add
+           FROM ${T_ATTACH}
+          WHERE id_conversation = ? AND status = 'done' AND path IS NOT NULL
+          ORDER BY id DESC`,
+		[idConversation]
+	);
+
+	const out = { image: [], video: [], audio: [], voice: [], file: [] };
+
+	for (const a of rows) {
+		// Голосові — audio з subtype 'voice'; але subtype не тягнемо,
+		// тож розділяємо просто: audio → в audio. Якщо треба voice окремо —
+		// додай subtype у SELECT. Поки audio і voice разом в audio.
+		const bucket = a.type === "sticker" ? "image" : out[a.type] ? a.type : "file";
+		out[bucket].push({
+			id: a.id,
+			type: a.type,
+			path: a.path,
+			thumb_path: a.thumb_path,
+			file_name: a.file_name,
+			mime: a.mime,
+			size: a.size,
+			duration: a.duration,
+			date_add: a.date_add,
+		});
+	}
+
+	return out;
+}
+
+/**
  * Клієнт прочитав вихідні повідомлення до вказаного ID.
  * Канали, які не повідомляють про прочитання (Telegram), це не викликають —
  * там статус лишається 'sent'.
@@ -586,6 +628,7 @@ module.exports = {
 	setMessageReaction,
 	getConversationByToken,
 	getMessages,
+	getMedia,
 	findOrCreateContact,
 	findOrCreateConversation,
 	addIncoming,

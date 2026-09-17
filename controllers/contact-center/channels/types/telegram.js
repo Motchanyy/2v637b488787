@@ -225,7 +225,8 @@ module.exports = {
 				lng: extra.lng || null,
 				attachments: attachments,
 				date_add: new Date(msg.date * 1000),
-				attributes: msg.reply_to_message ? { reply_to_source_id: String(msg.reply_to_message.message_id) } : null,
+				// Пряме поле — його читає model.addIncoming (як для Instagram)
+				reply_to_source_id: msg.reply_to_message ? String(msg.reply_to_message.message_id) : null,
 			},
 		};
 	},
@@ -263,6 +264,69 @@ module.exports = {
 		} catch (e) {
 			const msg = (e.response && e.response.data && e.response.data.description) || e.message;
 			return { ok: false, error: String(msg).slice(0, 500) };
+		}
+	},
+
+	// ── Аватар контакта (ім'я вже приходить в апдейті) ──
+	// Telegram: getUserProfilePhotos → getFile → завантажуємо до себе.
+	// URL Telegram містить токен бота, тож показувати його не можна — качаємо локально.
+	async enrichContact(conn, idChannel, chatId) {
+		const P2 = require("../../../../config/config").get("configDatabase").prefix;
+		const T_CONTACTS = P2 + "contact_center_contacts";
+
+		const [crows] = await conn.execute(`SELECT id, avatar, attributes FROM ${T_CONTACTS} WHERE id_channel = ? AND external_id = ? LIMIT 1`, [idChannel, String(chatId)]);
+		const contact = crows[0];
+		if (!contact) return;
+
+		let attrs = {};
+		try {
+			attrs = contact.attributes ? (typeof contact.attributes === "string" ? JSON.parse(contact.attributes) : contact.attributes) : {};
+		} catch (e) {
+			attrs = {};
+		}
+
+		// Троттлінг: не частіше разу на добу
+		const lastSync = attrs.avatar_synced_at ? new Date(attrs.avatar_synced_at).getTime() : 0;
+		if (Date.now() - lastSync < 24 * 60 * 60 * 1000) return;
+
+		const [trow] = await conn.execute(`SELECT token_cipher, token_iv, token_tag FROM ${TABLE} WHERE id_channel = ? LIMIT 1`, [idChannel]);
+		const token = trow[0] && cryptoHelper.decrypt(trow[0].token_cipher, trow[0].token_iv, trow[0].token_tag);
+		if (!token) return;
+
+		try {
+			// У приватному чаті chat.id === user.id
+			const photos = await axios.get(`https://api.telegram.org/bot${token}/getUserProfilePhotos`, {
+				params: { user_id: chatId, limit: 1 },
+				timeout: 10000,
+			});
+
+			const pd = photos.data;
+			if (!pd || !pd.ok || !pd.result.total_count) {
+				// Немає фото — фіксуємо таймстемп, щоб не смикати щоразу
+				attrs.avatar_synced_at = new Date().toISOString();
+				await conn.execute(`UPDATE ${T_CONTACTS} SET attributes = ? WHERE id = ?`, [JSON.stringify(attrs), contact.id]);
+				return;
+			}
+
+			// Найменший розмір фото (перший) — для аватара досить
+			const sizes = pd.result.photos[0];
+			const fileId = sizes[0].file_id;
+
+			const fileResp = await axios.get(`https://api.telegram.org/bot${token}/getFile`, { params: { file_id: fileId }, timeout: 10000 });
+			if (!fileResp.data || !fileResp.data.ok) return;
+
+			const filePath = fileResp.data.result.file_path;
+			const downloadUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
+
+			// Завантажуємо до себе
+			const files = require("../../files");
+			const saved = await files.downloadAvatar(downloadUrl, "tg_" + chatId, filePath.split(".").pop() || "jpg");
+			if (!saved) return;
+
+			attrs.avatar_synced_at = new Date().toISOString();
+			await conn.execute(`UPDATE ${T_CONTACTS} SET avatar = ?, attributes = ? WHERE id = ?`, [saved, JSON.stringify(attrs), contact.id]);
+		} catch (e) {
+			// не критично
 		}
 	},
 

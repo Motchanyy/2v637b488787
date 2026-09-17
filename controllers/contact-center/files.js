@@ -234,4 +234,30 @@ async function processOne(attachmentId) {
 	return true;
 }
 
-module.exports = { processQueue, processAttachment, processOne, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };
+/**
+ * Завантажує аватар за URL у сховище, повертає публічний шлях.
+ * Використовується адаптерами (Telegram: URL містить токен, показувати не можна).
+ */
+async function downloadAvatar(url, nameKey, ext) {
+	const path = require("path");
+	const fs = require("fs");
+
+	try {
+		const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 15000, maxContentLength: 10 * 1024 * 1024 });
+
+		const dir = path.join(UPLOAD_ROOT, "avatars");
+		fs.mkdirSync(dir, { recursive: true });
+
+		const safeExt = /^[a-z0-9]{1,5}$/i.test(ext) ? ext.toLowerCase() : "jpg";
+		const fileName = String(nameKey).replace(/[^a-z0-9_]/gi, "") + "_" + Date.now() + "." + safeExt;
+		const full = path.join(dir, fileName);
+
+		fs.writeFileSync(full, Buffer.from(resp.data));
+
+		return PUBLIC_PREFIX + "/avatars/" + fileName;
+	} catch (e) {
+		return null;
+	}
+}
+
+module.exports = { processQueue, processAttachment, processOne, downloadAvatar, conversationDir, extFor, UPLOAD_ROOT, PUBLIC_PREFIX };

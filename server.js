@@ -226,7 +226,6 @@ app.use("/", require("./routes/catalog/brands/brands"));
 // ─── КОНТАКТ-ЦЕНТР ──────────────────────────────────
 app.use("/", require("./routes/contact-center/contact-center"));
 app.use("/", require("./routes/contact-center/channels/channels"));
-app.use("/", require("./routes/contact-center/telegram/telegram"));
 app.use("/", require("./routes/contact-center/web-chat/web-chat"));
 app.use("/", require("./routes/contact-center/webhooks/webhooks"));
 
