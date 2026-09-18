@@ -62,4 +62,22 @@ async function markConversationRead(idConversation, idManager) {
 	}
 }
 
-module.exports = { list, save, notifyIncoming, markConversationRead };
+/** Видаляє всі сповіщення діалогу (при повному видаленні діалогу). */
+async function deleteConversationNotifications(idConversation) {
+	try {
+		await connection_pool.query(`DELETE FROM ${P}notif_inbox WHERE collapse_key = ?`, ["cc_conv_" + idConversation]);
+	} catch (error) {
+		logging.error(error);
+	}
+}
+	
+/** Видаляє всі сповіщення діалогу (при повному видаленні діалогу). */
+async function deleteConversationNotifications(idConversation) {
+	try {
+		await connection_pool.query(`DELETE FROM ${P}notif_inbox WHERE collapse_key = ?`, ["cc_conv_" + idConversation]);
+	} catch (error) {
+		logging.error(error);
+	}
+}
+
+module.exports = { list, save, notifyIncoming, markConversationRead, deleteConversationNotifications };

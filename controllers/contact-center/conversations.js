@@ -566,6 +566,45 @@ const conversationsControllers = {
 			res.status(500).json({ open: 0, pending: 0, resolved: 0, archived: 0, unread: 0 });
 		}
 	},
+
+	// ── Повне видалення діалогу (БД + файли, незворотно) ──
+	// Право: власник діалогу АБО can_delete на сторінці контакт-центру.
+	delete: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ status: "error", message: "Невірний ID" });
+
+		try {
+			const [rows] = await connection_pool.query(`SELECT id, id_manager FROM ${T_CONVS} WHERE id = ? LIMIT 1`, [id]);
+			if (!rows.length) return res.status(404).json({ status: "error", message: "Діалог не знайдено" });
+
+			const conv = rows[0];
+			const isOwner = conv.id_manager !== null && Number(conv.id_manager) === Number(req.user.userId);
+			const canDelete = req.user.permissions && req.user.permissions["contact-center"] && req.user.permissions["contact-center"].delete === true;
+
+			if (!isOwner && !canDelete) {
+				return res.status(403).json({ status: "error", message: "Видаляти може лише власник діалогу або адміністратор" });
+			}
+
+			const info = await model.deleteConversation(id);
+
+			if (info && info.channel_type === "webchat" && info.site_id && info.room_id) {
+				try {
+					const webchat = require("../../routes/contact-center/web-chat/web-chat");
+					if (typeof webchat.deleteChatExternal === "function") {
+						await webchat.deleteChatExternal(info.site_id, info.room_id);
+					}
+				} catch (e) {
+					console.error("webchat deleteChatExternal:", e.message);
+				}
+			}
+
+			res.status(200).json({ status: "success" });
+		} catch (error) {
+			console.error("conversation delete:", error.message);
+			logging.error(error);
+			res.status(500).json({ status: "error", message: "Помилка сервера" });
+		}
+	},
 };
 
 module.exports = conversationsControllers;

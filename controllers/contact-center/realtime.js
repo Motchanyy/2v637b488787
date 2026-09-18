@@ -74,6 +74,17 @@ module.exports = {
 		});
 	},
 
+	// Клієнт друкує (з текстом прев'ю). text порожній = перестав друкувати
+	typing(idConversation, text) {
+		const server = io();
+		if (!server) return;
+
+		server.to("io_conversation_" + idConversation).emit("cc:typing", {
+			id_conversation: idConversation,
+			text: text || "",
+		});
+	},
+
 	// Онлайн-статус співрозмовника
 	presence(idConversation, online) {
 		const server = io();

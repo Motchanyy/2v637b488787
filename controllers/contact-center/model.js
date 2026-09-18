@@ -622,12 +622,73 @@ async function setMessageReaction(idChannel, sourceId, action, emoji) {
 	return { affected: 1, id_conversation: msg.id_conversation, id_message: msg.id, reaction: value };
 }
 
+/**
+ * Повне видалення діалогу. FK-каскади стирають messages/attachments/unread
+ * автоматично — тут видаляємо conversation і чистимо файли з диску.
+ * Повертає звʼязок для веб-чату (щоб чистити стару схему).
+ */
+async function deleteConversation(idConversation) {
+	const fs = require("fs");
+	const path = require("path");
+
+	const [atts] = await connection_pool.query(`SELECT path FROM ${T_ATTACH} WHERE id_conversation = ? AND path IS NOT NULL`, [idConversation]);
+
+	const [convRows] = await connection_pool.query(
+		`SELECT ch.type AS channel_type, ct.external_id
+           FROM ${T_CONVS} AS c
+           INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
+           INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
+          WHERE c.id = ? LIMIT 1`,
+		[idConversation]
+	);
+	const conv = convRows[0] || null;
+
+	// Сповіщення діалогу (notif_inbox по collapse_key) — до видалення conversation
+	try {
+		await require("./notifications").deleteConversationNotifications(idConversation);
+	} catch (e) {
+		console.error("[cc-delete notif]", e.message);
+	}
+
+	// Сповіщення діалогу (notif_inbox по collapse_key) — до видалення conversation
+	try {
+		await require("./notifications").deleteConversationNotifications(idConversation);
+	} catch (e) {
+		console.error("[cc-delete notif]", e.message);
+	}
+
+	// Видалення conversation → messages/attachments/unread підуть каскадом (FK ON DELETE CASCADE)
+	await connection_pool.query(`DELETE FROM ${T_CONVS} WHERE id = ?`, [idConversation]);
+
+	// Файли з диску — після видалення рядків
+	const UPLOAD_ROOT = path.join(process.cwd(), "assets", "contact-center");
+	for (const a of atts) {
+		try {
+			if (!a.path) continue;
+			const rel = String(a.path).replace(/^\/assets\/contact-center\//, "");
+			const abs = path.join(UPLOAD_ROOT, rel);
+			if (abs.startsWith(path.resolve(UPLOAD_ROOT) + path.sep) && fs.existsSync(abs)) fs.unlinkSync(abs);
+		} catch (e) {
+			console.error("[cc-delete file]", e.message);
+		}
+	}
+
+	if (conv && conv.channel_type === "webchat" && conv.external_id) {
+		const roomId = conv.external_id;
+		const us = roomId.indexOf("_");
+		return { channel_type: "webchat", room_id: roomId, site_id: us > -1 ? roomId.slice(0, us) : null };
+	}
+
+	return { channel_type: conv ? conv.channel_type : null };
+}
+
 module.exports = {
 	markOutgoingRead,
 	markOutgoingReadBySourceId,
 	setMessageReaction,
 	getConversationByToken,
 	getMessages,
+	deleteConversation,
 	getMedia,
 	findOrCreateContact,
 	findOrCreateConversation,

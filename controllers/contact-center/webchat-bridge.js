@@ -236,4 +236,36 @@ async function markRead(siteId, roomId, lastReadId) {
 	}
 }
 
-module.exports = { mirror, channelBySite, markRead };
+// roomId → id_conversation (кеш, бо typing шле часто)
+const convCache = new Map();
+async function convByRoom(siteId, roomId) {
+	const cached = convCache.get(roomId);
+	if (cached && Date.now() - cached.at < 60000) return cached.id;
+
+	const channel = await channelBySite(siteId);
+	if (!channel) return null;
+
+	const [rows] = await connection_pool.query(
+		`SELECT c.id
+           FROM ${P}contact_center_conversations AS c
+           INNER JOIN ${P}contact_center_contacts AS ct ON ct.id = c.id_contact
+          WHERE ct.id_channel = ? AND ct.external_id = ? LIMIT 1`,
+		[channel.id_channel, roomId]
+	);
+
+	const id = rows.length ? rows[0].id : null;
+	if (id) convCache.set(roomId, { at: Date.now(), id });
+	return id;
+}
+
+// Клієнт друкує → у CRM-socket відкритого діалогу
+async function typing(siteId, roomId, text) {
+	try {
+		const id = await convByRoom(siteId, roomId);
+		if (id) realtime.typing(id, text);
+	} catch (e) {
+		console.error("[WC typing]", e.message);
+	}
+}
+
+module.exports = { mirror, channelBySite, markRead, typing };
