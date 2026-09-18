@@ -55,6 +55,7 @@ router.post("/api/contact-center/chat/:id/upload/", authorizationControllers.isA
 router.post("/api/contact-center/chat/:id/command/", authorizationControllers.isAuthenticated, conversationsControllers.command);
 router.post("/api/contact-center/chat/:id/assign/", authorizationControllers.isAuthenticated, conversationsControllers.assign);
 router.post("/api/contact-center/chat/:id/status/", authorizationControllers.isAuthenticated, conversationsControllers.status);
+router.post("/api/contact-center/chat/:id/delete/", authorizationControllers.isAuthenticated, conversationsControllers.delete);
 
 // END POST
 

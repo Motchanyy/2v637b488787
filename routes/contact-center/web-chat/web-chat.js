@@ -1648,7 +1648,9 @@ function bindSocket(nsp) {
 		socket.on("client:preview", ({ text } = {}) => {
 			const d = socket.data || {};
 			if (d.role !== "client" || !d.roomId) return;
-			io.to(`operators_${d.siteId}`).emit("operator:preview", { roomId: d.roomId, siteId: d.siteId, text: String(text || "").slice(0, 500) });
+			const preview = String(text || "").slice(0, 500);
+			io.to(`operators_${d.siteId}`).emit("operator:preview", { roomId: d.roomId, siteId: d.siteId, text: preview });
+			ccBridge.typing(d.siteId, d.roomId, preview);
 		});
 
 		socket.on("client:read", async ({ lastReadId } = {}) => {
@@ -2408,3 +2410,7 @@ module.exports.sendFromCrm = sendFromCrm;
 module.exports.markReadFromCrm = markReadFromCrm;
 module.exports.validateConfig = validateConfig;
 module.exports.bustWidgetCfg = bustWidgetCfg;
+module.exports.deleteChatExternal = async function (siteId, roomId) {
+	await deleteChat(siteId, roomId);
+	if (io) io.to(`operators_${siteId}`).emit("operator:chat_deleted", { roomId, siteId });
+};
