@@ -613,20 +613,28 @@
 		renderLocaleUI(en, cfgGet(wcsConfig, "locales.primary", "uk"));
 
 		document.getElementById("cfg-position").value = cfgGet(wcsConfig, "appearance.position", "right");
-		document.getElementById("cfg-appearance-color").value = cfgGet(wcsConfig, "appearance.brandColor", "#007fff");
-		// Pickr для кольору бренду (як у orders/status)
+				const brandColor = cfgGet(wcsConfig, "appearance.brandColor", "#16a34a");
+		document.getElementById("cfg-appearance-color").value = brandColor;
 		let brandPickr = null;
 		if (typeof Pickr !== "undefined") {
 			brandPickr = Pickr.create({
 				el: ".pickr-brand",
 				theme: "monolith",
-				default: cfgGet(wcsConfig, "appearance.brandColor", "#007fff"),
-				swatches: ["#007fff", "#0057b8", "#2fb25c", "#e74c3c", "#3498db", "#8e44ad", "#f1c40f", "#e67e22", "#7f8c8d", "#34495e"],
-				components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: true } },
+				default: brandColor,
+				swatches: ["#16a34a", "#0057b8", "#2fb25c", "#e74c3c", "#3498db", "#8e44ad", "#f1c40f", "#e67e22", "#7f8c8d", "#34495e"],
+				components: {
+					preview: true,
+					opacity: false,
+					hue: true,
+					interaction: { input: true, save: true },
+				},
 			});
-			brandPickr.on("save", (color) => {
+						brandPickr.on("save", (color) => {
 				if (color) document.getElementById("cfg-appearance-color").value = color.toHEXA().toString(0).slice(0, 7);
 				brandPickr.hide();
+			});
+			brandPickr.on("init", () => {
+				brandPickr.setColor(brandColor);
 			});
 		}
 		document.getElementById("cfg-greeting-enabled").checked = !!cfgGet(wcsConfig, "greeting.enabled", false);

@@ -81,8 +81,8 @@
             </div>
 
             <div class="mb-3">
-              <label for="f_name" class="form-label"><%= i18n.__('contact_center.channels.edit.general.name') %></label>
-              <input type="text" class="form-control rounded-0" id="f_name" name="name" maxlength="255" value="<%= data.channel.name %>" />
+              <label for="f_name" class="form-label"><%= i18n.__('contact_center.channels.edit.general.name') %> <span class="text-danger">*</span></label>
+              <input type="text" class="form-control rounded-0" id="f_name" name="name" maxlength="255" required value="<%= data.channel.name %>" />
               <small class="text-muted"><%= i18n.__('contact_center.channels.edit.general.name_hint') %></small>
             </div>
 
@@ -356,17 +356,21 @@
           clearChannelErrors();
 
           if (!res.ok || data.status !== "success") {
-            if (data.status === "error" && Array.isArray(data.errors)) {
+            if (data.status === "error" && Array.isArray(data.errors) && data.errors.length) {
+              let firstMsg = "";
               data.errors.forEach((item) => {
-                if (!item.field) return notyf.error(item.message || "<%= i18n.__('contact_center.channels.notify.error') %>");
+                if (!firstMsg) firstMsg = item.message;
+                if (!item.field) return;
                 document.querySelectorAll('[name="' + item.field + '"]').forEach((input) => {
                   input.classList.add("is-invalid");
                   input.insertAdjacentHTML("afterend", '<div class="invalid-feedback d-block">' + item.message + "</div>");
                 });
               });
+              notyf.error(firstMsg || "<%= i18n.__('contact_center.channels.notify.error') %>");
               return;
             }
-            throw new Error(data.message || "<%= i18n.__('contact_center.channels.notify.error') %>");
+            notyf.error(data.message || "<%= i18n.__('contact_center.channels.notify.error') %>");
+            return;
           }
 
           notyf.success("<%= i18n.__('contact_center.channels.notify.saved') %>");
