@@ -428,9 +428,31 @@
 				});
 			}
 
+			function loadOnlineList() {
+				$.ajax({
+					url: "/api/contact-center/online-list/",
+					method: "POST",
+					contentType: "application/json",
+					data: JSON.stringify({}),
+					success: function (resp) {
+						(resp.ids || []).forEach(function (id) {
+							const $el = $('a[data-conv-id="' + Number(id) + '"]');
+							if (!$el.length) return;
+							let $dot = $el.find(".cc-dot");
+							if (!$dot.length) {
+								$dot = $('<span class="cc-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle"></span>');
+								$el.find("p").first().prepend($dot);
+							}
+							$dot.css("background", "#22c55e");
+						});
+					},
+				});
+			}
+
 			$(document).ready(function () {
 				loadTab("open", true);
 				loadCounters();
+				setTimeout(loadOnlineList, 1000);
 
 				$(".chats-container").each(function () {
 					const tab = $(this).data("tab");

@@ -308,6 +308,7 @@
 									<% } %>
 									<span class="cc-online-dot" id="cc_online_dot" title="—"></span>
 								</span>
+							</span>
 							<span class="badge text-bg-light rounded-0"><%= data.conversation.channel_name %></span>
 						</div>
 
@@ -413,10 +414,27 @@
 								<dt class="col-5"><%= i18n.__('contact_center.dialog.date_add') %></dt>
 								<dd class="col-7"><%= data.conversation.date_add %></dd>
 							</dl>
+							<% if (data.conversation.channel_type === 'webchat') { %>
+							<hr class="my-2" />
+							<div id="cc_visitor_info" class="small"><div class="text-muted">Завантаження…</div></div>
+							<% } %>
 						</div>
 					</div>
 
-					<div class="card border-primary rounded-0">
+					<!-- ═══ ТОВАР (тільки веб-чат) ═══ -->
+					<% if (data.conversation.channel_type === 'webchat') { %>
+					<div class="card border-primary rounded-0 mt-3" id="cc_product_card">
+						<div class="card-header text-bg-primary rounded-0 d-flex justify-content-between align-items-center">
+							<span>Товар</span>
+							<button type="button" class="btn btn-sm btn-light rounded-0 py-0" id="cc_prod_hist_btn" data-bs-toggle="offcanvas" data-bs-target="#cc_prod_offcanvas" title="Історія переглядів">
+								<i class="fa-solid fa-clock-rotate-left"></i>
+							</button>
+						</div>
+						<div class="card-body cc-product" id="cc_product_body"></div>
+					</div>
+					<% } %>
+
+					<div class="card border-primary mt-3 rounded-0">
 						<div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.dialog.actions') %></div>
 						<div class="card-body d-grid gap-2">
 							<button type="button" class="btn btn-outline-primary rounded-0" id="btn_assign">
@@ -453,19 +471,6 @@
 							</div>
 						</div>
 					</div>
-
-					<!-- ═══ ТОВАР (тільки веб-чат) ═══ -->
-					<% if (data.conversation.channel_type === 'webchat') { %>
-					<div class="card border-primary rounded-0 mt-3" id="cc_product_card" style="display: none">
-						<div class="card-header text-bg-primary rounded-0 d-flex justify-content-between align-items-center">
-							<span>Товар</span>
-							<button type="button" class="btn btn-sm btn-light rounded-0 py-0" id="cc_prod_hist_btn" data-bs-toggle="offcanvas" data-bs-target="#cc_prod_offcanvas" title="Історія переглядів">
-								<i class="fa-solid fa-clock-rotate-left"></i>
-							</button>
-						</div>
-						<div class="card-body cc-product" id="cc_product_body"></div>
-					</div>
-					<% } %>
 				</div>
 			</div>
 		</div>
@@ -481,9 +486,7 @@
 				<div class="text-center text-muted p-4">—</div>
 			</div>
 		</div>
-		<% } %>
-
-		<%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
+		<% } %> <%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
 
 		<script src="/assets/js/notyf/notyf.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/emoji-mart@5.6.0/dist/browser.min.js"></script>
@@ -1422,7 +1425,7 @@
 				loadMedia();
 			})();
 		</script>
-				<% if (data.conversation.channel_type === 'webchat') { %>
+		<% if (data.conversation.channel_type === 'webchat') { %>
 		<script>
 			// ================================================================
 			// КАРТКА ТОВАРУ (веб-чат): поточний + історія (offcanvas)
@@ -1435,7 +1438,7 @@
 
 				function renderProduct(p) {
 					if (!p || !p.name) {
-						card.style.display = "none";
+						body.innerHTML = '<div class="text-muted small text-center py-2">Клієнт ще не переглядав товари</div>';
 						return;
 					}
 					let html = "";
@@ -1454,7 +1457,6 @@
 					if (p.description) html += '<div class="small text-muted mt-1" style="max-height:60px;overflow:hidden">' + escapeHtml(p.description) + "</div>";
 					if (p.url) html += '<a href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary rounded-0 mt-2 w-100">Відкрити сторінку</a>';
 					body.innerHTML = html;
-					card.style.display = "";
 				}
 
 				function renderHistory(items) {
@@ -1496,19 +1498,48 @@
 			})();
 		</script>
 		<% } %>
-				<script>
-			socket.on("cc:presence", function (data) {
-				if (!data || Number(data.id_conversation || data.id) !== CONV_ID) return;
+		<script>
+			// Початковий онлайн-статус + жива поточна сторінка + інфо клієнта
+			function ccSetOnlineDot(online) {
 				const dot = document.getElementById("cc_online_dot");
 				if (!dot) return;
-				if (data.online) {
-					dot.classList.add("is-online");
-					dot.title = "Онлайн";
-				} else {
-					dot.classList.remove("is-online");
-					dot.title = "Офлайн";
-				}
+				dot.classList.toggle("is-online", !!online);
+				dot.title = online ? "Онлайн" : "Офлайн";
+			}
+			fetch("/api/contact-center/chat/" + CONV_ID + "/online/", {
+				method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}),
+			}).then(function (r) { return r.json(); }).then(function (d) { ccSetOnlineDot(!!d.online); }).catch(function () {});
+
+			<% if (data.conversation.channel_type === 'webchat') { %>
+			function ccRenderVisitorInfo(info, pageUrl) {
+				const box = document.getElementById("cc_visitor_info");
+				if (!box) return;
+				info = info || {};
+				const rows = [];
+				const cur = pageUrl || info.pageUrl;
+				if (cur) rows.push('<div class="mb-1"><span class="text-muted">Зараз на:</span><br><a href="' + escapeHtml(cur) + '" target="_blank" rel="noopener" class="text-truncate d-inline-block" style="max-width:100%">' + escapeHtml(cur) + "</a></div>");
+				if (info.ip) rows.push('<div><span class="text-muted">IP:</span> ' + escapeHtml(info.ip) + "</div>");
+				if (info.referrer) rows.push('<div><span class="text-muted">Джерело:</span> ' + escapeHtml(info.referrer) + "</div>");
+				if (info.utm && (info.utm.source || info.utm.campaign)) rows.push('<div><span class="text-muted">UTM:</span> ' + escapeHtml([info.utm.source, info.utm.medium, info.utm.campaign].filter(Boolean).join(" / ")) + "</div>");
+				if (info.timezone) rows.push('<div><span class="text-muted">Часовий пояс:</span> ' + escapeHtml(info.timezone) + "</div>");
+				if (info.platform) rows.push('<div><span class="text-muted">ОС:</span> ' + escapeHtml(info.platform) + "</div>");
+				if (info.screen) rows.push('<div><span class="text-muted">Екран:</span> ' + escapeHtml(info.screen) + "</div>");
+				if (info.connection) rows.push('<div><span class="text-muted">Зʼєднання:</span> ' + escapeHtml(info.connection) + "</div>");
+				box.innerHTML = rows.length ? rows.join("") : '<div class="text-muted">Немає даних</div>';
+			}
+			let ccVisitorInfo = null;
+			fetch("/api/contact-center/chat/" + CONV_ID + "/visitor-info/", {
+				method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}),
+			}).then(function (r) { return r.json(); }).then(function (d) { ccVisitorInfo = d.info || {}; ccRenderVisitorInfo(ccVisitorInfo); }).catch(function () {});
+
+			// Жива зміна сторінки
+			socket.on("cc:visitor_page", function (data) {
+				if (!data || Number(data.id_conversation) !== CONV_ID) return;
+				if (!ccVisitorInfo) ccVisitorInfo = {};
+				ccVisitorInfo.pageUrl = data.page_url;
+				ccRenderVisitorInfo(ccVisitorInfo);
 			});
+			<% } %>
 		</script>
 	</body>
 </html>
