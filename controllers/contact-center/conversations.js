@@ -605,6 +605,20 @@ const conversationsControllers = {
 			res.status(500).json({ status: "error", message: "Помилка сервера" });
 		}
 	},
+
+	// Товари, які переглядав клієнт (веб-чат): поточний + історія
+	products: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ error: "bad_id" });
+		try {
+			const bridge = require("./webchat-bridge");
+			const data = await bridge.productsForConversation(id);
+			res.status(200).json(data);
+		} catch (error) {
+			console.error("conversation products:", error.message);
+			res.status(200).json({ current: null, history: [] });
+		}
+	},
 };
 
 module.exports = conversationsControllers;

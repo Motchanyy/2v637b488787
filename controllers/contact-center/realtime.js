@@ -85,10 +85,22 @@ module.exports = {
 		});
 	},
 
-	// Онлайн-статус співрозмовника
+	// Онлайн-статус співрозмовника — і в список, і у відкритий діалог
 	presence(idConversation, online) {
 		const server = io();
 		if (!server) return;
-		server.to("io_alert_contact_center").emit("cc:presence", { id: idConversation, online: !!online });
+		const data = { id: idConversation, id_conversation: idConversation, online: !!online };
+		server.to("io_alert_contact_center").emit("cc:presence", data);
+		server.to("io_conversation_" + idConversation).emit("cc:presence", data);
+	},
+
+	// Товар, який зараз/востаннє переглядає клієнт
+	product(idConversation, product) {
+		const server = io();
+		if (!server) return;
+		server.to("io_conversation_" + idConversation).emit("cc:product", {
+			id_conversation: idConversation,
+			product: product || null,
+		});
 	},
 };

@@ -268,4 +268,50 @@ async function typing(siteId, roomId, text) {
 	}
 }
 
-module.exports = { mirror, channelBySite, markRead, typing };
+// Онлайн/офлайн клієнта → у список і у відкритий діалог
+async function presence(siteId, roomId, online) {
+	try {
+		const id = await convByRoom(siteId, roomId);
+		if (id) realtime.presence(id, online);
+	} catch (e) {
+		console.error("[WC presence]", e.message);
+	}
+}
+
+// Товар, який дивиться клієнт → у відкритий діалог
+async function product(siteId, roomId, prod) {
+	try {
+		const id = await convByRoom(siteId, roomId);
+		if (id) realtime.product(id, prod);
+	} catch (e) {
+		console.error("[WC product]", e.message);
+	}
+}
+
+// id_conversation → { site_id, room_id } для веб-чат-каналу
+async function webchatRefByConversation(idConversation) {
+	const [rows] = await connection_pool.query(
+		`SELECT ct.external_id, ch.type AS channel_type
+           FROM ${P}contact_center_conversations AS c
+           INNER JOIN ${P}contact_center_channels AS ch ON ch.id = c.id_channel
+           INNER JOIN ${P}contact_center_contacts AS ct ON ct.id = c.id_contact
+          WHERE c.id = ? LIMIT 1`,
+		[idConversation]
+	);
+	const r = rows[0];
+	if (!r || r.channel_type !== "webchat" || !r.external_id) return null;
+	const roomId = r.external_id;
+	const us = roomId.indexOf("_");
+	return { site_id: us > -1 ? roomId.slice(0, us) : null, room_id: roomId };
+}
+
+// Товари діалогу (поточний + історія) для нової сторінки
+async function productsForConversation(idConversation) {
+	const ref = await webchatRefByConversation(idConversation);
+	if (!ref || !ref.site_id) return { current: null, history: [] };
+	const webchat = require("../../routes/contact-center/web-chat/web-chat");
+	if (typeof webchat.getProductsForRoom !== "function") return { current: null, history: [] };
+	return webchat.getProductsForRoom(ref.site_id, ref.room_id);
+}
+
+module.exports = { mirror, channelBySite, markRead, typing, presence, product, productsForConversation };
