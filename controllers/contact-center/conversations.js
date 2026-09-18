@@ -71,7 +71,7 @@ const conversationsControllers = {
                  INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
                  INNER JOIN ${T_CONTACTS} AS ct ON ct.id = c.id_contact
                  LEFT JOIN ${T_UNREAD} AS ur ON ur.id_conversation = c.id AND ur.id_manager = ?
-                 WHERE ch.deleted = 0 AND c.status = ? ${where}
+				 WHERE ch.deleted = 0 AND ch.status = 1 AND c.status = ? ${where}
                  ORDER BY c.date_last_message DESC, c.id DESC
                  LIMIT ${limit}`,
 				params
@@ -546,7 +546,7 @@ const conversationsControllers = {
                  FROM ${T_CONVS} AS c
                  INNER JOIN ${T_CHANNELS} AS ch ON ch.id = c.id_channel
                  LEFT JOIN ${T_UNREAD} AS ur ON ur.id_conversation = c.id AND ur.id_manager = ?
-                 WHERE ch.deleted = 0
+				 WHERE ch.deleted = 0 AND ch.status = 1
                    AND (c.id_manager IS NULL OR c.id_manager = ?)
                  GROUP BY c.status`,
 				[currentUserId, currentUserId, currentUserId]
@@ -620,7 +620,7 @@ const conversationsControllers = {
 		}
 	},
 
-		online: async (req, res) => {
+	online: async (req, res) => {
 		const id = parseInt(req.params.id, 10);
 		if (!id) return res.status(400).json({ online: false });
 		try {

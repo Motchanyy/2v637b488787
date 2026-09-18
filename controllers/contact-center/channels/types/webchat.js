@@ -20,7 +20,33 @@ module.exports = {
 	async create(conn, idChannel) {
 		const siteId = "s_" + cryptoHelper.random(12);
 
-		await conn.execute(`INSERT INTO ${SITES} (site_id, domains, active) VALUES (?, '', 0)`, [siteId]);
+		const defaultConfig = {
+			version: 1,
+			locales: { enabled: ["en"], primary: "en" },
+			appearance: {
+				position: "right",
+				brandColor: "#16a34a",
+				headerTitle: { en: "Chat with us" },
+			},
+			greeting: {
+				enabled: true,
+				autoOpen: false,
+				autoOpenDelaySec: 0,
+				desktop: { autoOpen: false, sound: true },
+				mobile: { autoOpen: false, sound: false },
+				working: { en: "Hi! How can we help you?" },
+				offline: { en: "We are currently offline. Leave a message and we'll get back to you." },
+				offlineAck: { en: "Thanks! We received your message and will reply during working hours." },
+			},
+			hours: {
+				timezone: "Europe/Kyiv",
+				force: "auto",
+				schedule: { 1: [[9, 18]], 2: [[9, 18]], 3: [[9, 18]], 4: [[9, 18]], 5: [[9, 18]] },
+				holidays: [],
+			},
+		};
+
+		await conn.execute(`INSERT INTO ${SITES} (site_id, domains, active, config) VALUES (?, '', 0, CAST(? AS JSON))`, [siteId, JSON.stringify(defaultConfig)]);
 		await conn.execute(`INSERT INTO ${TABLE} (id_channel, site_id) VALUES (?, ?)`, [idChannel, siteId]);
 	},
 

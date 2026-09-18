@@ -2452,3 +2452,17 @@ module.exports.getVisitorInfo = async function (siteId, roomId) {
 		return null;
 	}
 };
+
+// Синхронізація активності сайту веб-чату зі статусом каналу контакт-центру.
+// Канал вимкнено → віджет не показується (getSites бере лише active=1).
+module.exports.setSiteActiveByChannel = async function (idChannel, active) {
+	try {
+		const [rows] = await pool.query(`SELECT site_id FROM ${prefix}contact_center_channel_webchat WHERE id_channel = ? LIMIT 1`, [idChannel]);
+		if (!rows.length || !rows[0].site_id) return;
+		await pool.execute(`UPDATE ${SITES} SET active = ? WHERE site_id = ?`, [active ? 1 : 0, rows[0].site_id]);
+		// скидаємо кеш сайтів, щоб зміна діяла одразу, а не за 60с
+		sitesCache = { at: 0, map: new Map() };
+	} catch (e) {
+		console.error("setSiteActiveByChannel:", e.message);
+	}
+};

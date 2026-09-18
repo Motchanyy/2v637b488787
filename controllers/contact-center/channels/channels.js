@@ -54,14 +54,13 @@ const channelsControllers = {
 	create: async (req, res) => {
 		const b = req.body || {};
 		const type = String(b.type || "").trim();
-		const name = String(b.name || "").trim();
 
-		const errors = [];
-		if (!types.get(type)) errors.push({ field: "type", message: "Оберіть тип каналу" });
-		if (!name) errors.push({ field: "name", message: "Вкажіть назву каналу" });
-		else if (name.length > 255) errors.push({ field: "name", message: "Назва задовга (макс. 255)" });
+		const typeDef = types.get(type);
+		if (!typeDef) return res.status(400).json({ status: "error", errors: [{ field: "type", message: "Оберіть тип каналу" }] });
 
-		if (errors.length) return res.status(400).json({ status: "error", errors });
+		// Назву задають уже на сторінці каналу — тут ставимо дефолтну (назва типу).
+		const defaultName = res.__ ? res.__(typeDef.label) : typeDef.code;
+		const name = String(b.name || "").trim() || defaultName;
 
 		const conn = await connection_pool.getConnection();
 		try {
@@ -97,6 +96,17 @@ const channelsControllers = {
 			if (r.affectedRows === 0) {
 				return res.status(400).json({ status: "error", message: "Канал не налаштовано" });
 			}
+
+			// Веб-чат: вимкнений канал → віджет замовкає
+			try {
+				const [tr] = await connection_pool.query(`SELECT type FROM ${TABLE} WHERE id = ? LIMIT 1`, [id]);
+				if (tr.length && tr[0].type === "webchat") {
+					await require("../../../routes/contact-center/web-chat/web-chat").setSiteActiveByChannel(id, status);
+				}
+			} catch (e) {
+				console.error("wc sync status:", e.message);
+			}
+
 			res.status(200).json({ status: "success" });
 		} catch (error) {
 			console.error("channels status:", error.message);
@@ -164,6 +174,10 @@ const channelsControllers = {
 			const name = String(b.name || "").trim();
 			if (!name) errors.push({ field: "name", message: "Вкажіть назву каналу" });
 			else if (name.length > 255) errors.push({ field: "name", message: "Назва задовга (макс. 255)" });
+			else {
+				const [dup] = await conn.execute(`SELECT id FROM ${TABLE} WHERE deleted = 0 AND id <> ? AND LOWER(TRIM(name)) = LOWER(?) LIMIT 1`, [id, name]);
+				if (dup.length) errors.push({ field: "name", message: "Канал з такою назвою вже існує" });
+			}
 
 			// Валідація типової частини — всередині типу
 			const current = await type.load(conn, id);
@@ -195,45 +209,23 @@ const channelsControllers = {
 			);
 
 			await conn.commit();
+
+			// Веб-чат: синхронізуємо активність сайту з фінальним статусом каналу
+			if (rows[0].type === "webchat") {
+				const finalActive = configured && b.status ? 1 : 0;
+				try {
+					await require("../../../routes/contact-center/web-chat/web-chat").setSiteActiveByChannel(id, finalActive);
+				} catch (e) {
+					console.error("wc sync update:", e.message);
+				}
+			}
+
 			res.status(200).json({ status: "success", reload: !!result.reload });
 		} catch (error) {
 			await conn.rollback();
 			console.error("channels update:", error.message);
 			logging.error(error);
 			res.status(500).json({ status: "error", errors: [{ message: "Помилка сервера" }] });
-		} finally {
-			conn.release();
-		}
-	},
-
-	// ── Перевірка підключення ──
-	test: async (req, res) => {
-		const id = parseInt(req.params.id, 10);
-		if (!id) return res.status(400).json({ ok: false, error: "Невірний ID" });
-
-		const conn = await connection_pool.getConnection();
-		try {
-			const [rows] = await conn.execute(`SELECT type FROM ${TABLE} WHERE id = ? AND deleted = 0 LIMIT 1`, [id]);
-			if (!rows.length) return res.status(404).json({ ok: false, error: "Канал не знайдено" });
-
-			const type = types.get(rows[0].type);
-			if (!type) return res.status(400).json({ ok: false, error: "Невідомий тип каналу" });
-
-			const result = await type.test(conn, id);
-
-			await conn.execute(
-				`UPDATE ${TABLE}
-                 SET connection_status = ?, connection_error = ?, date_checked = NOW(),
-                     is_configured = ?, status = IF(? = 1, status, 0)
-                 WHERE id = ?`,
-				[result.ok ? "ok" : "error", result.ok ? null : result.error || null, result.ok ? 1 : 0, result.ok ? 1 : 0, id]
-			);
-
-			res.status(200).json(result);
-		} catch (error) {
-			console.error("channels test:", error.message);
-			logging.error(error);
-			res.status(500).json({ ok: false, error: "Помилка сервера" });
 		} finally {
 			conn.release();
 		}
@@ -281,6 +273,16 @@ const channelsControllers = {
 			const [r] = await connection_pool.execute(`UPDATE ${TABLE} SET deleted = 1, status = 0, date_deleted = NOW(), id_user_deleted = ? WHERE id = ? AND deleted = 0`, [req.user.userId, id]);
 
 			if (r.affectedRows === 0) return res.status(404).json({ status: "error", message: "Канал не знайдено" });
+
+			try {
+				const [tr] = await connection_pool.query(`SELECT type FROM ${TABLE} WHERE id = ? LIMIT 1`, [id]);
+				if (tr.length && tr[0].type === "webchat") {
+					await require("../../../routes/contact-center/web-chat/web-chat").setSiteActiveByChannel(id, 0);
+				}
+			} catch (e) {
+				console.error("wc sync remove:", e.message);
+			}
+
 			res.status(200).json({ status: "success" });
 		} catch (error) {
 			console.error("channels delete:", error.message);

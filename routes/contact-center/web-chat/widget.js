@@ -71,7 +71,7 @@
       #lc-panel { position: fixed; bottom: ${2 * D + BTN}px; right: ${D}px;
                   width: 377px; height: 520px; max-height: calc(100vh - ${2 * D + BTN + 24}px);
                   border: 0;
-                  border: 1px solid #007fff;
+                  border: 1px solid ${BRAND_COLOR};
                   background: #fff; z-index: 99999999999;
                   opacity: 0; transform: translateY(16px);
                   visibility: hidden; pointer-events: none;
