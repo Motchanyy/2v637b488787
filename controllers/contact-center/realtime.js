@@ -103,4 +103,14 @@ module.exports = {
 			product: product || null,
 		});
 	},
+
+	// Жива поточна сторінка клієнта
+	visitorPage(idConversation, pageUrl) {
+		const server = io();
+		if (!server) return;
+		server.to("io_conversation_" + idConversation).emit("cc:visitor_page", {
+			id_conversation: idConversation,
+			page_url: pageUrl || "",
+		});
+	},
 };

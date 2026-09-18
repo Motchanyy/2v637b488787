@@ -314,4 +314,46 @@ async function productsForConversation(idConversation) {
 	return webchat.getProductsForRoom(ref.site_id, ref.room_id);
 }
 
-module.exports = { mirror, channelBySite, markRead, typing, presence, product, productsForConversation };
+async function isConversationOnline(idConversation) {
+	const ref = await webchatRefByConversation(idConversation);
+	if (!ref) return false;
+	const webchat = require("../../routes/contact-center/web-chat/web-chat");
+	return typeof webchat.isRoomOnline === "function" ? webchat.isRoomOnline(ref.room_id) : false;
+}
+
+async function onlineConversationIds() {
+	try {
+		const webchat = require("../../routes/contact-center/web-chat/web-chat");
+		if (typeof webchat.getOnlineRooms !== "function") return [];
+		const rooms = webchat.getOnlineRooms();
+		if (!rooms.length) return [];
+		const ph = rooms.map(() => "?").join(",");
+		const [rows] = await connection_pool.query(
+			`SELECT c.id FROM ${P}contact_center_conversations AS c
+               INNER JOIN ${P}contact_center_contacts AS ct ON ct.id = c.id_contact
+              WHERE ct.external_id IN (${ph})`,
+			rooms
+		);
+		return rows.map((r) => r.id);
+	} catch (e) {
+		return [];
+	}
+}
+
+async function visitorInfoForConversation(idConversation) {
+	const ref = await webchatRefByConversation(idConversation);
+	if (!ref || !ref.site_id) return null;
+	const webchat = require("../../routes/contact-center/web-chat/web-chat");
+	if (typeof webchat.getVisitorInfo !== "function") return null;
+	return webchat.getVisitorInfo(ref.site_id, ref.room_id);
+}
+
+// Жива поточна сторінка клієнта → у відкритий діалог
+async function visitorPage(siteId, roomId, pageUrl) {
+	try {
+		const id = await convByRoom(siteId, roomId);
+		if (id) realtime.visitorPage(id, pageUrl);
+	} catch (e) {}
+}
+
+module.exports = { mirror, channelBySite, markRead, typing, presence, product, productsForConversation, isConversationOnline, onlineConversationIds, visitorInfoForConversation, visitorPage };

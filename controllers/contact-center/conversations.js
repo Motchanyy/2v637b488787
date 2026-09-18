@@ -619,6 +619,40 @@ const conversationsControllers = {
 			res.status(200).json({ current: null, history: [] });
 		}
 	},
+
+		online: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ online: false });
+		try {
+			const bridge = require("./webchat-bridge");
+			const online = await bridge.isConversationOnline(id);
+			res.status(200).json({ online: !!online });
+		} catch (e) {
+			res.status(200).json({ online: false });
+		}
+	},
+
+	onlineList: async (req, res) => {
+		try {
+			const bridge = require("./webchat-bridge");
+			const ids = await bridge.onlineConversationIds();
+			res.status(200).json({ ids: ids });
+		} catch (e) {
+			res.status(200).json({ ids: [] });
+		}
+	},
+
+	visitorInfo: async (req, res) => {
+		const id = parseInt(req.params.id, 10);
+		if (!id) return res.status(400).json({ info: null });
+		try {
+			const bridge = require("./webchat-bridge");
+			const info = await bridge.visitorInfoForConversation(id);
+			res.status(200).json({ info: info });
+		} catch (e) {
+			res.status(200).json({ info: null });
+		}
+	},
 };
 
 module.exports = conversationsControllers;
