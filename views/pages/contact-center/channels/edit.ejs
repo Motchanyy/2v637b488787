@@ -4,7 +4,9 @@
     <title><%= i18n.__('contact_center.channels.edit.title') %></title>
     <%- include('../../../partials/head'); %>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
-        <link href="/assets/css/scheduler/scheduler.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/monolith.min.css" />
+    <style>.pickr .pcr-button{border:1px solid #eee;border-radius:0}</style>
+    <link href="/assets/css/scheduler/scheduler.css" rel="stylesheet" />
     <style>
       .channel-head-icon {
         font-size: 2rem;
@@ -98,35 +100,8 @@
         <div class="card border-primary rounded-0 mb-3">
           <div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.channels.edit.connection.title') %></div>
           <div class="card-body">
-            <!-- Стан останньої перевірки -->
-            <div class="row align-items-center mb-3">
-              <div class="col-auto">
-                <% if (data.channel.connection_status === 'ok') { %>
-                <span class="badge text-bg-success rounded-0"><%= i18n.__('contact_center.channels.conn.ok') %></span>
-                <% } else if (data.channel.connection_status === 'error') { %>
-                <span class="badge text-bg-danger rounded-0"><%= i18n.__('contact_center.channels.conn.error') %></span>
-                <% } else { %>
-                <span class="badge text-bg-secondary rounded-0"><%= i18n.__('contact_center.channels.conn.unknown') %></span>
-                <% } %>
-              </div>
-              <div class="col">
-                <span id="conn_message" class="small text-muted">
-                  <% if (data.channel.connection_status === 'error' && data.channel.connection_error) { %>
-                  <%= data.channel.connection_error %>
-                  <% } else if (data.channel.date_checked) { %>
-                  <%= i18n.__('contact_center.channels.edit.connection.checked_at') %>: <%= data.channel.date_checked %>
-                  <% } %>
-                </span>
-              </div>
-              <div class="col-auto">
-                <button type="button" class="btn btn-outline-primary rounded-0" id="btn_test"><%= i18n.__('contact_center.channels.edit.connection.test') %></button>
-              </div>
-            </div>
-
-            <hr />
-
             <!-- Поля конкретного типу каналу -->
-                        <%- include(data.typeView) %>
+            <%- include(data.typeView) %>
           </div>
         </div>
 
@@ -181,7 +156,8 @@
 
     <%- include('../../../partials/footer'); %> <%- include('../../../partials/script'); %>
     <script src="/assets/js/scheduler/scheduler.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    
     <!-- Notyf -->
     <script src="/assets/js/notyf/notyf.min.js"></script>
     <script>
@@ -398,40 +374,6 @@
           // Токен змінено → канал треба перевірити заново, сторінку перезавантажуємо,
           // щоб стани (маска токена, перемикач, бейдж) не розійшлися з БД.
           if (data.reload) window.location.reload();
-        } catch (err) {
-          notyf.error(err.message);
-        } finally {
-          btn.disabled = false;
-          btn.innerHTML = originalHtml;
-        }
-      });
-
-      // ── Перевірка підключення ───────────────────────────────────────────────
-      document.getElementById("btn_test").addEventListener("click", async function () {
-        const btn = this;
-        if (btn.disabled) return;
-
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-        try {
-          const res = await fetch("/api/contact-center/channels/" + document.getElementById("channel_id").value + "/test/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-          });
-
-          const data = await res.json().catch(() => ({}));
-
-          if (data.ok) {
-            notyf.success("<%= i18n.__('contact_center.channels.edit.connection.test_ok') %>");
-            window.location.reload();
-            return;
-          }
-
-          document.getElementById("conn_message").textContent = data.error || "";
-          notyf.error(data.error || "<%= i18n.__('contact_center.channels.notify.error') %>");
         } catch (err) {
           notyf.error(err.message);
         } finally {

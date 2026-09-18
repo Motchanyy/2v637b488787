@@ -1,219 +1,210 @@
 <!-- Домени -->
 <div class="mb-3">
-  <label for="f_allowed_origins" class="form-label"><%= i18n.__('contact_center.channels.webchat.allowed_origins') %></label>
-  <input type="text" class="form-control rounded-0" id="f_allowed_origins" name="allowed_origins" value="<%= data.settings.domains || '' %>" />
-  <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.allowed_origins_hint') %></small>
+	<label for="f_allowed_origins" class="form-label"><%= i18n.__('contact_center.channels.webchat.allowed_origins') %></label>
+	<input type="text" class="form-control rounded-0" id="f_allowed_origins" name="allowed_origins" value="<%= data.settings.domains || '' %>" />
+	<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.allowed_origins_hint') %></small>
 </div>
 
 <!-- Код вставки -->
 <div class="mb-3">
-  <label class="form-label"><%= i18n.__('contact_center.channels.webchat.embed_code') %></label>
-  <div class="input-group">
-    <textarea class="form-control rounded-0 bg-light" id="f_embed_code" rows="2" readonly>&lt;script src="<%= data.appUrl %>/chat/widget.js" data-site-id="<%= data.settings.site_id || '' %>" async&gt;&lt;/script&gt;</textarea>
-    <button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_embed_code">
-      <i class="fa-regular fa-copy"></i>
-    </button>
-  </div>
-  <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.embed_hint') %></small>
+	<label class="form-label"><%= i18n.__('contact_center.channels.webchat.embed_code') %></label>
+	<div class="input-group">
+		<textarea class="form-control rounded-0 bg-light" id="f_embed_code" rows="2" readonly>&lt;script src="<%= data.appUrl %>/chat/widget.js" data-site-id="<%= data.settings.site_id || '' %>" async&gt;&lt;/script&gt;</textarea>
+		<button type="button" class="btn btn-outline-secondary rounded-0 copy-field" data-target="f_embed_code">
+			<i class="fa-regular fa-copy"></i>
+		</button>
+	</div>
+	<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.embed_hint') %></small>
 </div>
 
 <hr />
 
 <!-- ═══ ВКЛАДКИ НАЛАШТУВАНЬ ВІДЖЕТА ═══ -->
 <ul class="nav nav-tabs mb-3" role="tablist">
-  <li class="nav-item"><button class="nav-link active rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-general" type="button"><%= i18n.__('contact_center.channels.webchat.tab_general') %></button></li>
-  <li class="nav-item"><button class="nav-link rounded-0" id="wc-tab-hours-btn" data-bs-toggle="tab" data-bs-target="#wc-tab-hours" type="button"><%= i18n.__('contact_center.channels.webchat.tab_hours') %></button></li>
-  <li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-texts" type="button"><%= i18n.__('contact_center.channels.webchat.tab_texts') %></button></li>
-  <li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-forms" type="button"><%= i18n.__('contact_center.channels.webchat.tab_forms') %></button></li>
+	<li class="nav-item"><button class="nav-link active rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-general" type="button"><%= i18n.__('contact_center.channels.webchat.tab_general') %></button></li>
+	<li class="nav-item"><button class="nav-link rounded-0" id="wc-tab-hours-btn" data-bs-toggle="tab" data-bs-target="#wc-tab-hours" type="button"><%= i18n.__('contact_center.channels.webchat.tab_hours') %></button></li>
+	<li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-texts" type="button"><%= i18n.__('contact_center.channels.webchat.tab_texts') %></button></li>
+	<li class="nav-item"><button class="nav-link rounded-0" data-bs-toggle="tab" data-bs-target="#wc-tab-forms" type="button"><%= i18n.__('contact_center.channels.webchat.tab_forms') %></button></li>
 </ul>
 
 <div class="tab-content">
-  <!-- ── ЗАГАЛЬНЕ ── -->
-  <div class="tab-pane fade show active" id="wc-tab-general">
-    <div class="row">
-      <div class="col-md-4 mb-3">
-        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.position') %></label>
-        <select class="form-select rounded-0" id="cfg-position">
-          <option value="right"><%= i18n.__('contact_center.channels.webchat.position_right') %></option>
-          <option value="left"><%= i18n.__('contact_center.channels.webchat.position_left') %></option>
-        </select>
-      </div>
-      <div class="col-md-4 mb-3">
-        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.brand_color') %></label>
-        <input type="color" class="form-control form-control-color rounded-0" id="cfg-appearance-color" value="#007fff" />
-      </div>
-      <div class="col-md-4 mb-3">
-        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.primary_locale') %></label>
-        <select class="form-select rounded-0" id="cfg-locale-primary"></select>
-        <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.primary_locale_hint') %></small>
-      </div>
-    </div>
+	<!-- ── ЗАГАЛЬНЕ ── -->
+	<div class="tab-pane fade show active" id="wc-tab-general">
+		<div class="row">
+			<div class="col-md-4 mb-3">
+				<label class="form-label"><%= i18n.__('contact_center.channels.webchat.position') %></label>
+				<select class="form-select rounded-0" id="cfg-position">
+					<option value="right"><%= i18n.__('contact_center.channels.webchat.position_right') %></option>
+					<option value="left"><%= i18n.__('contact_center.channels.webchat.position_left') %></option>
+				</select>
+			</div>
+			<div class="col-md-4 mb-3">
+				<label class="form-label d-block"><%= i18n.__('contact_center.channels.webchat.brand_color') %></label>
+				<div class="pickr-brand" data-target="cfg-appearance-color"></div>
+				<input type="hidden" id="cfg-appearance-color" value="#007fff" />
+			</div>
+			<div class="col-md-4 mb-3">
+				<label class="form-label"><%= i18n.__('contact_center.channels.webchat.primary_locale') %></label>
+				<select class="form-select rounded-0" id="cfg-locale-primary"></select>
+				<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.primary_locale_hint') %></small>
+			</div>
+		</div>
 
-    <div class="form-check mb-3">
-      <input class="form-check-input rounded-0" type="checkbox" id="cfg-productcard" />
-      <label class="form-check-label" for="cfg-productcard"><%= i18n.__('contact_center.channels.webchat.product_card') %></label>
-    </div>
+		<div class="form-check mb-3">
+			<input class="form-check-input rounded-0" type="checkbox" id="cfg-productcard" />
+			<label class="form-check-label" for="cfg-productcard"><%= i18n.__('contact_center.channels.webchat.product_card') %></label>
+		</div>
 
-    <hr />
-    <h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.greeting') %></h6>
+		<hr />
+		<h6 class="mb-3"><%= i18n.__('contact_center.channels.webchat.greeting') %></h6>
 
-    <div class="form-check mb-2">
-      <input class="form-check-input rounded-0" type="checkbox" id="cfg-greeting-enabled" />
-      <label class="form-check-label" for="cfg-greeting-enabled"><%= i18n.__('contact_center.channels.webchat.greeting_enabled') %></label>
-    </div>
+		<div class="form-check mb-2">
+			<input class="form-check-input rounded-0" type="checkbox" id="cfg-greeting-enabled" />
+			<label class="form-check-label" for="cfg-greeting-enabled"><%= i18n.__('contact_center.channels.webchat.greeting_enabled') %></label>
+		</div>
 
-    <div class="mb-3" style="max-width: 260px">
-      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.greeting_delay') %></label>
-      <input type="number" class="form-control rounded-0" id="cfg-greeting-delay" value="0" min="0" />
-    </div>
+		<div class="mb-3" style="max-width: 260px">
+			<label class="form-label"><%= i18n.__('contact_center.channels.webchat.greeting_delay') %></label>
+			<input type="number" class="form-control rounded-0" id="cfg-greeting-delay" value="0" min="0" />
+		</div>
 
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <div class="fw-bold mb-2"><i class="fa-solid fa-desktop me-1"></i> <%= i18n.__('contact_center.channels.webchat.desktop') %></div>
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-autoopen" />
-          <label class="form-check-label" for="cfg-greeting-desktop-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-sound" />
-          <label class="form-check-label" for="cfg-greeting-desktop-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
-        </div>
-      </div>
-      <div class="col-md-6 mb-3">
-        <div class="fw-bold mb-2"><i class="fa-solid fa-mobile-screen me-1"></i> <%= i18n.__('contact_center.channels.webchat.mobile') %></div>
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-autoopen" />
-          <label class="form-check-label" for="cfg-greeting-mobile-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-sound" />
-          <label class="form-check-label" for="cfg-greeting-mobile-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
-        </div>
-      </div>
-    </div>
-    <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.auto_open_hint') %></small>
-  </div>
+		<div class="row">
+			<div class="col-md-6 mb-3">
+				<div class="fw-bold mb-2"><i class="fa-solid fa-desktop me-1"></i> <%= i18n.__('contact_center.channels.webchat.desktop') %></div>
+				<div class="form-check form-switch mb-2">
+					<input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-autoopen" />
+					<label class="form-check-label" for="cfg-greeting-desktop-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
+				</div>
+				<div class="form-check form-switch mb-0">
+					<input class="form-check-input" type="checkbox" id="cfg-greeting-desktop-sound" />
+					<label class="form-check-label" for="cfg-greeting-desktop-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
+				</div>
+			</div>
+			<div class="col-md-6 mb-3">
+				<div class="fw-bold mb-2"><i class="fa-solid fa-mobile-screen me-1"></i> <%= i18n.__('contact_center.channels.webchat.mobile') %></div>
+				<div class="form-check form-switch mb-2">
+					<input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-autoopen" />
+					<label class="form-check-label" for="cfg-greeting-mobile-autoopen"><%= i18n.__('contact_center.channels.webchat.auto_open') %></label>
+				</div>
+				<div class="form-check form-switch mb-0">
+					<input class="form-check-input" type="checkbox" id="cfg-greeting-mobile-sound" />
+					<label class="form-check-label" for="cfg-greeting-mobile-sound"><%= i18n.__('contact_center.channels.webchat.sound') %></label>
+				</div>
+			</div>
+		</div>
+		<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.auto_open_hint') %></small>
+	</div>
 
-  <!-- ── ГОДИНИ ── -->
-  <div class="tab-pane fade" id="wc-tab-hours">
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.timezone') %></label>
-        <select class="form-select rounded-0" id="cfg-hours-tz">
-          <option value="Europe/Kyiv">Europe/Kyiv</option>
-          <option value="Europe/Warsaw">Europe/Warsaw</option>
-          <option value="Europe/London">Europe/London</option>
-          <option value="Europe/Berlin">Europe/Berlin</option>
-          <option value="UTC">UTC</option>
-        </select>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label class="form-label"><%= i18n.__('contact_center.channels.webchat.force_mode') %></label>
-        <select class="form-select rounded-0" id="cfg-hours-force">
-          <option value="auto"><%= i18n.__('contact_center.channels.webchat.force_auto') %></option>
-          <option value="online"><%= i18n.__('contact_center.channels.webchat.force_online') %></option>
-          <option value="offline"><%= i18n.__('contact_center.channels.webchat.force_offline') %></option>
-        </select>
-      </div>
-    </div>
+	<!-- ── ГОДИНИ ── -->
+	<div class="tab-pane fade" id="wc-tab-hours">
+		<div class="row">
+			<div class="col-md-6 mb-3">
+				<label class="form-label"><%= i18n.__('contact_center.channels.webchat.timezone') %></label>
+				<select class="form-select rounded-0" id="cfg-hours-tz">
+					<option value="Europe/Kyiv">Europe/Kyiv</option>
+					<option value="Europe/Warsaw">Europe/Warsaw</option>
+					<option value="Europe/London">Europe/London</option>
+					<option value="Europe/Berlin">Europe/Berlin</option>
+					<option value="UTC">UTC</option>
+				</select>
+			</div>
+			<div class="col-md-6 mb-3">
+				<label class="form-label"><%= i18n.__('contact_center.channels.webchat.force_mode') %></label>
+				<select class="form-select rounded-0" id="cfg-hours-force">
+					<option value="auto"><%= i18n.__('contact_center.channels.webchat.force_auto') %></option>
+					<option value="online"><%= i18n.__('contact_center.channels.webchat.force_online') %></option>
+					<option value="offline"><%= i18n.__('contact_center.channels.webchat.force_offline') %></option>
+				</select>
+			</div>
+		</div>
 
-    <div class="mb-3">
-      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.schedule') %></label>
-      <table id="wcs-scheduler" class="scheduler"></table>
-      <div class="alert alert-info rounded-0 mt-2 small mb-0"><%= i18n.__('contact_center.channels.webchat.schedule_hint') %></div>
-    </div>
+		<div class="mb-3">
+			<label class="form-label"><%= i18n.__('contact_center.channels.webchat.schedule') %></label>
+			<table id="wcs-scheduler" class="scheduler"></table>
+			<div class="alert alert-info rounded-0 mt-2 small mb-0"><%= i18n.__('contact_center.channels.webchat.schedule_hint') %></div>
+		</div>
+	</div>
 
-    <div class="mb-0">
-      <label class="form-label"><%= i18n.__('contact_center.channels.webchat.holidays') %></label>
-      <textarea class="form-control rounded-0" id="cfg-holidays" rows="4" placeholder="2026-01-01&#10;2026-12-25"></textarea>
-      <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.holidays_hint') %></small>
-    </div>
-  </div>
+	<!-- ── ТЕКСТИ ── -->
+	<div class="tab-pane fade" id="wc-tab-texts">
+		<div class="mb-3">
+			<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.locales') %></label>
+			<div id="cfg-locale-list" class="row"></div>
+		</div>
 
-  <!-- ── ТЕКСТИ ── -->
-  <div class="tab-pane fade" id="wc-tab-texts">
-    <div class="mb-3">
-      <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.locales') %></label>
-      <div id="cfg-locale-list" class="row"></div>
-    </div>
+		<hr />
+		<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.header_title') %></label>
+		<div id="cfg-header-langs" class="row mb-3"></div>
 
-    <hr />
-    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.header_title') %></label>
-    <div id="cfg-header-langs" class="row mb-3"></div>
+		<hr />
+		<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.greeting_texts') %></label>
+		<div id="cfg-greeting-langs" class="row mb-3"></div>
 
-    <hr />
-    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.greeting_texts') %></label>
-    <div id="cfg-greeting-langs" class="row mb-3"></div>
+		<hr />
+		<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.system_strings') %></label>
+		<div id="cfg-strings" class="row mb-3"></div>
 
-    <hr />
-    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.system_strings') %></label>
-    <div id="cfg-strings" class="row mb-3"></div>
+		<hr />
+		<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.ui_strings') %></label>
+		<div id="cfg-ui" class="row mb-0"></div>
+	</div>
 
-    <hr />
-    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.ui_strings') %></label>
-    <div id="cfg-ui" class="row mb-0"></div>
-  </div>
+	<!-- ── ФОРМИ І ТРИГЕРИ ── -->
+	<div class="tab-pane fade" id="wc-tab-forms">
+		<div class="d-flex justify-content-between align-items-center mb-2">
+			<label class="form-label fw-bold mb-0"><%= i18n.__('contact_center.channels.webchat.forms') %></label>
+			<button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="cfg-form-add"><i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.form_add') %></button>
+		</div>
+		<div id="cfg-forms-list" class="row mb-3"></div>
 
-  <!-- ── ФОРМИ І ТРИГЕРИ ── -->
-  <div class="tab-pane fade" id="wc-tab-forms">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <label class="form-label fw-bold mb-0"><%= i18n.__('contact_center.channels.webchat.forms') %></label>
-      <button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="cfg-form-add">
-        <i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.form_add') %>
-      </button>
-    </div>
-    <div id="cfg-forms-list" class="row mb-3"></div>
-
-    <hr />
-    <label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.triggers') %></label>
-    <div class="alert alert-info rounded-0 small"><%= i18n.__('contact_center.channels.webchat.triggers_hint') %></div>
-    <div id="cfg-triggers"></div>
-  </div>
+		<hr />
+		<label class="form-label fw-bold"><%= i18n.__('contact_center.channels.webchat.triggers') %></label>
+		<div class="alert alert-info rounded-0 small"><%= i18n.__('contact_center.channels.webchat.triggers_hint') %></div>
+		<div id="cfg-triggers"></div>
+	</div>
 </div>
 
 <!-- ═══ МОДАЛКА РЕДАКТОРА ФОРМИ ═══ -->
 <div class="modal fade" id="form-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content rounded-0">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="form-modal-title"><%= i18n.__('contact_center.channels.webchat.form') %></h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="form-orig-id" />
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_id') %></label>
-            <input type="text" class="form-control rounded-0" id="form-id" placeholder="contact" />
-            <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.form_id_hint') %></small>
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_target') %></label>
-            <select class="form-select rounded-0" id="form-target">
-              <option value="lead"><%= i18n.__('contact_center.channels.webchat.form_target_lead') %></option>
-            </select>
-          </div>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0"><%= i18n.__('contact_center.channels.webchat.form_fields') %></h6>
-          <button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="form-field-add">
-            <i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.field_add') %>
-          </button>
-        </div>
-        <div id="form-fields"></div>
-        <hr />
-        <div class="mb-0">
-          <label class="form-label"><%= i18n.__('contact_center.channels.webchat.require_any') %></label>
-          <div id="form-requireany" class="border rounded-0 p-2"></div>
-          <small class="text-muted"><%= i18n.__('contact_center.channels.webchat.require_any_hint') %></small>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary rounded-0" data-bs-dismiss="modal"><%= i18n.__('contact_center.channels.webchat.close') %></button>
-        <button type="button" class="btn btn-primary rounded-0" id="form-save"><%= i18n.__('contact_center.channels.webchat.form_save') %></button>
-      </div>
-    </div>
-  </div>
+	<div class="modal-dialog modal-dialog-centered modal-xl">
+		<div class="modal-content rounded-0">
+			<div class="modal-header">
+				<h1 class="modal-title fs-5" id="form-modal-title"><%= i18n.__('contact_center.channels.webchat.form') %></h1>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="form-orig-id" />
+				<div class="row">
+					<div class="col-md-6 mb-3">
+						<label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_id') %></label>
+						<input type="text" class="form-control rounded-0" id="form-id" placeholder="contact" />
+						<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.form_id_hint') %></small>
+					</div>
+					<div class="col-md-6 mb-3">
+						<label class="form-label"><%= i18n.__('contact_center.channels.webchat.form_target') %></label>
+						<select class="form-select rounded-0" id="form-target">
+							<option value="lead"><%= i18n.__('contact_center.channels.webchat.form_target_lead') %></option>
+						</select>
+					</div>
+				</div>
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="mb-0"><%= i18n.__('contact_center.channels.webchat.form_fields') %></h6>
+					<button type="button" class="btn btn-outline-primary btn-sm rounded-0" id="form-field-add"><i class="fa-solid fa-plus"></i> <%= i18n.__('contact_center.channels.webchat.field_add') %></button>
+				</div>
+				<div id="form-fields"></div>
+				<hr />
+				<div class="mb-0">
+					<label class="form-label"><%= i18n.__('contact_center.channels.webchat.require_any') %></label>
+					<div id="form-requireany" class="border rounded-0 p-2"></div>
+					<small class="text-muted"><%= i18n.__('contact_center.channels.webchat.require_any_hint') %></small>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary rounded-0" data-bs-dismiss="modal"><%= i18n.__('contact_center.channels.webchat.close') %></button>
+				<button type="button" class="btn btn-primary rounded-0" id="form-save"><%= i18n.__('contact_center.channels.webchat.form_save') %></button>
+			</div>
+		</div>
+	</div>
 </div>
 
 <script>
@@ -623,6 +614,21 @@
 
 		document.getElementById("cfg-position").value = cfgGet(wcsConfig, "appearance.position", "right");
 		document.getElementById("cfg-appearance-color").value = cfgGet(wcsConfig, "appearance.brandColor", "#007fff");
+		// Pickr для кольору бренду (як у orders/status)
+		let brandPickr = null;
+		if (typeof Pickr !== "undefined") {
+			brandPickr = Pickr.create({
+				el: ".pickr-brand",
+				theme: "monolith",
+				default: cfgGet(wcsConfig, "appearance.brandColor", "#007fff"),
+				swatches: ["#007fff", "#0057b8", "#2fb25c", "#e74c3c", "#3498db", "#8e44ad", "#f1c40f", "#e67e22", "#7f8c8d", "#34495e"],
+				components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: true } },
+			});
+			brandPickr.on("save", (color) => {
+				if (color) document.getElementById("cfg-appearance-color").value = color.toHEXA().toString(0).slice(0, 7);
+				brandPickr.hide();
+			});
+		}
 		document.getElementById("cfg-greeting-enabled").checked = !!cfgGet(wcsConfig, "greeting.enabled", false);
 		document.getElementById("cfg-greeting-delay").value = cfgGet(wcsConfig, "greeting.autoOpenDelaySec", 0);
 
@@ -635,7 +641,6 @@
 		document.getElementById("cfg-hours-tz").value = cfgGet(wcsConfig, "hours.timezone", "Europe/Kyiv");
 		document.getElementById("cfg-hours-force").value = cfgGet(wcsConfig, "hours.force", "auto");
 		document.getElementById("cfg-productcard").checked = !!cfgGet(wcsConfig, "productCard.enabled", false);
-		document.getElementById("cfg-holidays").value = (cfgGet(wcsConfig, "hours.holidays", []) || []).join("\n");
 
 		// Scheduler ініціалізуємо при першому показі вкладки:
 		// у прихованому блоці він рахує розміри неправильно
@@ -672,7 +677,8 @@
 			cfgSet(cfg, "hours.timezone", document.getElementById("cfg-hours-tz").value);
 			cfgSet(cfg, "hours.force", document.getElementById("cfg-hours-force").value);
 			if (wcsSchedulerReady) cfgSet(cfg, "hours.schedule", schedulerToSchedule($("#wcs-scheduler").scheduler("val")));
-			cfgSet(cfg, "hours.holidays", document.getElementById("cfg-holidays").value.split("\n").map((s) => s.trim()).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s)));
+			// holidays прибрано з інтерфейсу — зберігаємо наявне значення без змін
+			cfgSet(cfg, "hours.holidays", cfgGet(wcsConfig, "hours.holidays", []) || []);
 			cfgSet(cfg, "productCard.enabled", document.getElementById("cfg-productcard").checked);
 
 			collectTextGroups(cfg);
