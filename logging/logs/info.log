@@ -62336,3 +62336,46 @@
 {"level":30,"time":1789656009582,"pid":12868,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1475724,"active":2}
 {"level":30,"time":1789656009593,"pid":12868,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1475725,"active":1}
 {"level":30,"time":1789656009615,"pid":12868,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1475726,"active":0}
+{"level":30,"time":1789711114741,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","msg":"Cart maintenance started"}
+{"level":30,"time":1789711115313,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"callback","evt":"connection","threadId":1558401}
+{"level":30,"time":1789711115313,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"callback","evt":"acquire","threadId":1558401,"active":1}
+{"level":30,"time":1789711115314,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"callback","evt":"release","threadId":1558401,"active":0}
+{"level":30,"time":1789711115314,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558402}
+{"level":30,"time":1789711115314,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558402,"active":1}
+{"level":30,"time":1789711115315,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558403}
+{"level":30,"time":1789711115315,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558403,"active":2}
+{"level":30,"time":1789711115316,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558404}
+{"level":30,"time":1789711115316,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558404,"active":3}
+{"level":30,"time":1789711115320,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558405}
+{"level":30,"time":1789711115320,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558405,"active":4}
+{"level":30,"time":1789711115359,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558402,"active":3}
+{"level":30,"time":1789711115360,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558403,"active":2}
+{"level":30,"time":1789711115363,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558404,"active":1}
+{"level":30,"time":1789711115368,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558406}
+{"level":30,"time":1789711115368,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558406,"active":2}
+{"level":30,"time":1789711115369,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558405,"active":1}
+{"level":30,"time":1789711115369,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558405,"active":2}
+{"level":30,"time":1789711115373,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558407}
+{"level":30,"time":1789711115373,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558407,"active":3}
+{"level":30,"time":1789711115382,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"connection","threadId":1558408}
+{"level":30,"time":1789711115382,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558408,"active":4}
+{"level":30,"time":1789711115411,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558406,"active":3}
+{"level":30,"time":1789711115412,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","msg":"Inbox recovered on startup"}
+{"level":30,"time":1789711115412,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558406,"active":4}
+{"level":30,"time":1789711115417,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558407,"active":3}
+{"level":30,"time":1789711115417,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","msg":"Cart inbox recovered on startup"}
+{"level":30,"time":1789711115417,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558407,"active":4}
+{"level":30,"time":1789711115429,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558408,"active":3}
+{"level":30,"time":1789711115430,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","msg":"Outbox recovered on startup"}
+{"level":30,"time":1789711115430,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558408,"active":4}
+{"level":30,"time":1789711115455,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558406,"active":3}
+{"level":30,"time":1789711115455,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558406,"active":4}
+{"level":30,"time":1789711115461,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558407,"active":3}
+{"level":30,"time":1789711115461,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558407,"active":4}
+{"level":30,"time":1789711115478,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558408,"active":3}
+{"level":30,"time":1789711115478,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"acquire","threadId":1558408,"active":4}
+{"level":30,"time":1789711115514,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558405,"active":3}
+{"level":30,"time":1789711115585,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558406,"active":2}
+{"level":30,"time":1789711115594,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558407,"active":1}
+{"level":30,"time":1789711115621,"pid":26148,"hostname":"DESKTOP-SFTOMOJ","pool":"promise","evt":"release","threadId":1558408,"active":0}
+{"level":30,"time":1789733784461,"pid":33560,"hostname":"DESKTOP-SFTOMOJ","msg":"Cart maintenance started"}

@@ -1440,6 +1440,7 @@ function bindSocket(nsp) {
 
 				visitorProduct.delete(roomId);
 				io.to(`operators_${siteId}`).emit("operator:visitor_product", { roomId, siteId, product: null });
+				ccBridge.product(siteId, roomId, null).catch(() => {});
 
 				Object.assign(socket.data, {
 					role: "client",
@@ -1685,6 +1686,10 @@ function bindSocket(nsp) {
 			if (clean) visitorProduct.set(d.roomId, clean);
 			else visitorProduct.delete(d.roomId);
 			io.to(`operators_${d.siteId}`).emit("operator:visitor_product", { roomId: d.roomId, siteId: d.siteId, product: clean });
+
+			// У нову CRM: current = товар або null (клієнт вийшов з товару)
+			ccBridge.product(d.siteId, d.roomId, clean).catch(() => {});
+
 			if (clean) {
 				upsertProductView(d.siteId, d.visitorId, clean).catch((e) => console.error("product view:", e.message));
 				io.to(`operators_${d.siteId}`).emit("operator:product_history_update", { roomId: d.roomId, siteId: d.siteId, item: { product: clean, views: null, lastViewed: new Date().toISOString() } });

@@ -457,11 +457,17 @@
 
 		let lastProductKey = "";
 		function sendProduct() {
+			console.log("[widget sendProduct] PRODUCT_CARD=" + PRODUCT_CARD);
 			if (!PRODUCT_CARD) return;
 			const p = readProduct();
 			const key = p ? p.url + "|" + p.sku + "|" + p.price : "";
-			if (key === lastProductKey) return;
+			console.log("[widget sendProduct] key='" + key + "' last='" + lastProductKey + "'");
+			if (key === lastProductKey) {
+				console.log("[widget sendProduct] skip (same key)");
+				return;
+			}
 			lastProductKey = key;
+			console.log("[widget sendProduct] SEND product=" + (p ? p.name : "null"));
 			if (panel.contentWindow) {
 				panel.contentWindow.postMessage({ type: "lc:product", product: p }, APP_ORIGIN);
 			}
@@ -508,7 +514,6 @@
 			const check = () => {
 				if (location.href !== lastHref) {
 					lastHref = location.href;
-					lastProductKey = ""; // URL змінився — дозволяємо надіслати новий товар
 					setTimeout(sendProduct, 800);
 				}
 			};
