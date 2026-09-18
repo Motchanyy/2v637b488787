@@ -148,7 +148,7 @@
 				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 				line-height: 1.4;
 			}
-						.msg-bubble {
+			.msg-bubble {
 				position: relative;
 			}
 
@@ -192,6 +192,16 @@
 				color: #6c757d;
 				font-size: 0.85rem;
 				padding: 1.5rem 0;
+			}
+			.cc-typing {
+				padding: 0.25rem 1rem 0.5rem;
+				font-size: 0.8rem;
+				color: #6c757d;
+				font-style: italic;
+			}
+			.cc-typing b {
+				font-style: normal;
+				color: #495057;
 			}
 		</style>
 	</head>
@@ -264,6 +274,7 @@
 						<div class="flex-grow-1" style="position: relative; min-height: 420px">
 							<div id="feed" class="dialog-feed"></div>
 						</div>
+						<div id="cc_typing" class="cc-typing d-none"></div>
 
 						<!-- Форма відправки -->
 						<form id="composer" class="card-footer text-body-secondary bg-transparent p-0 rounded-0" autocomplete="off" style="position: relative">
@@ -364,7 +375,9 @@
 							</button>
 							<button type="button" class="btn btn-outline-success rounded-0 btn-status" data-status="resolved"><%= i18n.__('contact_center.dialog.resolve') %></button>
 							<button type="button" class="btn btn-outline-secondary rounded-0 btn-status" data-status="archived"><%= i18n.__('contact_center.dialog.archive') %></button>
-														<button type="button" class="btn btn-outline-primary rounded-0 btn-status" data-status="open"><%= i18n.__('contact_center.dialog.reopen') %></button>
+							<button type="button" class="btn btn-outline-primary rounded-0 btn-status" data-status="open"><%= i18n.__('contact_center.dialog.reopen') %></button>
+							<hr class="my-1" />
+							<button type="button" class="btn btn-outline-danger rounded-0" id="btn_delete_dialog"><i class="fa-solid fa-trash me-1"></i> Видалити діалог</button>
 						</div>
 					</div>
 
@@ -373,10 +386,18 @@
 						<div class="card-header text-bg-primary rounded-0">Медіа</div>
 						<div class="card-body">
 							<ul class="nav nav-pills nav-fill gap-1 mb-2" role="tablist">
-								<li class="nav-item"><button class="nav-link active rounded-0 px-2 py-1" data-cc-media="image" type="button" title="Фото"><i class="fa-regular fa-image"></i></button></li>
-								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="video" type="button" title="Відео"><i class="fa-solid fa-film"></i></button></li>
-								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="audio" type="button" title="Аудіо"><i class="fa-solid fa-music"></i></button></li>
-								<li class="nav-item"><button class="nav-link rounded-0 px-2 py-1" data-cc-media="file" type="button" title="Файли"><i class="fa-regular fa-file"></i></button></li>
+								<li class="nav-item">
+									<button class="nav-link active rounded-0 px-2 py-1" data-cc-media="image" type="button" title="Фото"><i class="fa-regular fa-image"></i></button>
+								</li>
+								<li class="nav-item">
+									<button class="nav-link rounded-0 px-2 py-1" data-cc-media="video" type="button" title="Відео"><i class="fa-solid fa-film"></i></button>
+								</li>
+								<li class="nav-item">
+									<button class="nav-link rounded-0 px-2 py-1" data-cc-media="audio" type="button" title="Аудіо"><i class="fa-solid fa-music"></i></button>
+								</li>
+								<li class="nav-item">
+									<button class="nav-link rounded-0 px-2 py-1" data-cc-media="file" type="button" title="Файли"><i class="fa-regular fa-file"></i></button>
+								</li>
 							</ul>
 							<div class="cc-media-pane" id="cc_media_body">
 								<div class="cc-media-empty">Завантаження…</div>
@@ -1089,6 +1110,31 @@
 					}
 				});
 			});
+
+			document.getElementById("btn_delete_dialog").addEventListener("click", async function () {
+				if (!confirm("Видалити діалог назавжди разом з усіма повідомленнями та файлами? Дію неможливо скасувати.")) return;
+
+				const btn = this;
+				btn.disabled = true;
+
+				try {
+					const res = await fetch("/api/contact-center/chat/" + CONV_ID + "/delete/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({}),
+					});
+					const data = await res.json();
+					if (data.status !== "success") throw new Error(data.message || "");
+
+					notyf.success("Діалог видалено");
+					setTimeout(function () {
+						window.location.href = "/contact-center/";
+					}, 700);
+				} catch (err) {
+					btn.disabled = false;
+					notyf.error("Не вдалося видалити діалог");
+				}
+			});
 		</script>
 
 		<script>
@@ -1169,8 +1215,44 @@
 				}
 				badge.textContent = data.reaction;
 			});
+
+			// Клієнт друкує — показуємо індикатор із текстом прев'ю
+			let typingTimer = null;
+			socket.on("cc:typing", function (data) {
+				if (!data || Number(data.id_conversation) !== CONV_ID) return;
+
+				const box = document.getElementById("cc_typing");
+				if (!box) return;
+
+				const text = String(data.text || "").trim();
+				clearTimeout(typingTimer);
+
+				if (!text) {
+					box.classList.add("d-none");
+					box.innerHTML = "";
+					return;
+				}
+
+				box.innerHTML = "друкує: <b>" + escapeHtml(text) + "</b>";
+				box.classList.remove("d-none");
+
+				typingTimer = setTimeout(function () {
+					box.classList.add("d-none");
+					box.innerHTML = "";
+				}, 4000);
+			});
+
+			socket.on("cc:message", function (data) {
+				if (data && data.message && data.message.direction === "in") {
+					const box = document.getElementById("cc_typing");
+					if (box) {
+						box.classList.add("d-none");
+						box.innerHTML = "";
+					}
+				}
+			});
 		</script>
-				<script>
+		<script>
 			// ================================================================
 			// МЕДІАТЕКА — окрема картка. Лениве завантаження при першому показі.
 			// ================================================================
