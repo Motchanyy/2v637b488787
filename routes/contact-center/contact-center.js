@@ -57,6 +57,9 @@ router.post("/api/contact-center/chat/:id/command/", authorizationControllers.is
 router.post("/api/contact-center/chat/:id/assign/", authorizationControllers.isAuthenticated, conversationsControllers.assign);
 router.post("/api/contact-center/chat/:id/status/", authorizationControllers.isAuthenticated, conversationsControllers.status);
 router.post("/api/contact-center/chat/:id/delete/", authorizationControllers.isAuthenticated, conversationsControllers.delete);
+router.post("/api/contact-center/chat/:id/online/", authorizationControllers.isAuthenticated, conversationsControllers.online);
+router.post("/api/contact-center/online-list/", authorizationControllers.isAuthenticated, conversationsControllers.onlineList);
+router.post("/api/contact-center/chat/:id/visitor-info/", authorizationControllers.isAuthenticated, conversationsControllers.visitorInfo);
 
 // END POST
 

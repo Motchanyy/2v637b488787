@@ -1486,6 +1486,7 @@ function bindSocket(nsp) {
 				saveVisitorMeta(siteId, visitorId, fullMeta).catch((e) => console.error("meta save:", e.message));
 
 				io.to(`operators_${siteId}`).emit("operator:visitor_page", { roomId, siteId, pageUrl: fullMeta.pageUrl, at: Date.now() });
+				ccBridge.visitorPage(siteId, roomId, fullMeta.pageUrl).catch(() => {});
 
 				const leadAlready = await hasLead(siteId, roomId).catch(() => false);
 				socket.data.leadDone = leadAlready;
@@ -2423,14 +2424,26 @@ module.exports.deleteChatExternal = async function (siteId, roomId) {
 	await deleteChat(siteId, roomId);
 	if (io) io.to(`operators_${siteId}`).emit("operator:chat_deleted", { roomId, siteId });
 };
-// Поточний товар (з памʼяті presence) + історія переглядів — для нової сторінки діалогу
+module.exports.isRoomOnline = function (roomId) {
+	return (onlineClients.get(roomId) || 0) > 0;
+};
+module.exports.getOnlineRooms = function () {
+	return [...onlineClients.keys()];
+};
 module.exports.getProductsForRoom = async function (siteId, roomId) {
 	const visitorId = String(roomId).slice(String(siteId).length + 1);
 	let history = [];
 	try {
 		history = await getProductHistory(siteId, visitorId, null, 50);
-	} catch (e) {
-		console.error("getProductsForRoom:", e.message);
-	}
+	} catch (e) {}
 	return { current: visitorProduct.get(roomId) || null, history: history };
+};
+module.exports.getVisitorInfo = async function (siteId, roomId) {
+	const visitorId = String(roomId).slice(String(siteId).length + 1);
+	try {
+		const meta = await getVisitorMeta(siteId, visitorId);
+		return meta ? meta.data : null;
+	} catch (e) {
+		return null;
+	}
 };
