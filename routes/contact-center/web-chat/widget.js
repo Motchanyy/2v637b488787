@@ -33,8 +33,8 @@
 		.catch(() => {});
 
 	function initLoader() {
-		const D = 16,   // відступ від краю екрана
-			BTN = 52;   // розмір кнопок
+		const D = 16, // відступ від краю екрана
+			BTN = 52; // розмір кнопок
 
 		// ─────────────────────────────────────────────────────────
 		// 3. Конфігурація дочірніх кнопок MFB-меню
@@ -432,16 +432,21 @@
 
 				const brand = node.brand && (typeof node.brand === "string" ? node.brand : node.brand.name);
 
+				const rating = node.aggregateRating || {};
 				const product = {
 					name: node.name || "",
 					url: offer.url || node.url || location.href,
 					sku: node.sku || node.mpn || node.productID || "",
+					gtin: node.gtin13 || node.gtin || node.gtin12 || node.gtin14 || node.gtin8 || "",
 					image: firstImage(node.image),
+					description: (node.description || "").slice(0, 500),
 					price: offer.price != null ? String(offer.price) : "",
 					currency: offer.priceCurrency || "",
 					availability: normAvailability(offer.availability),
 					inventory: offer.inventoryLevel != null ? String(offer.inventoryLevel) : "",
 					brand: brand || "",
+					rating: rating.ratingValue != null ? String(rating.ratingValue) : "",
+					reviewCount: rating.reviewCount != null ? String(rating.reviewCount) : "",
 				};
 				if (!product.name) return null;
 				return product;

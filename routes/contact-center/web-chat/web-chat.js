@@ -258,17 +258,23 @@ function sanitizeProduct(p) {
 	if (!p || typeof p !== "object") return null;
 	const clip = (v, n) => String(v == null ? "" : v).slice(0, n);
 	const av = ["in", "out", "preorder", "backorder"].includes(p.availability) ? p.availability : "";
+
 	const out = {
 		name: clip(p.name, 200),
 		url: safeUrl(p.url),
 		sku: clip(p.sku, 80),
+		gtin: clip(p.gtin, 20),
 		image: safeUrl(p.image),
+		description: clip(p.description, 500),
 		price: clip(p.price, 40),
 		currency: clip(p.currency, 10),
 		availability: av,
 		inventory: clip(p.inventory, 12),
 		brand: clip(p.brand, 120),
+		rating: clip(p.rating, 8),
+		reviewCount: clip(p.reviewCount, 10),
 	};
+
 	if (!out.name) return null;
 	return out;
 }
@@ -1428,7 +1434,9 @@ function bindSocket(nsp) {
 				const roomId = roomIdOf(siteId, visitorId);
 
 				socket.join(roomId);
+				const wasOffline = (onlineClients.get(roomId) || 0) === 0;
 				onlineClients.set(roomId, (onlineClients.get(roomId) || 0) + 1);
+				if (wasOffline) ccBridge.presence(siteId, roomId, true).catch(() => {});
 
 				visitorProduct.delete(roomId);
 				io.to(`operators_${siteId}`).emit("operator:visitor_product", { roomId, siteId, product: null });
@@ -2111,6 +2119,7 @@ function bindSocket(nsp) {
 					onlineClients.delete(d.roomId);
 					visitorProduct.delete(d.roomId);
 					io.to(`operators_${d.siteId}`).emit("operator:visitor_left", { roomId: d.roomId });
+					ccBridge.presence(d.siteId, d.roomId, false).catch(() => {});
 				} else onlineClients.set(d.roomId, cnt);
 			}
 		});
@@ -2413,4 +2422,15 @@ module.exports.bustWidgetCfg = bustWidgetCfg;
 module.exports.deleteChatExternal = async function (siteId, roomId) {
 	await deleteChat(siteId, roomId);
 	if (io) io.to(`operators_${siteId}`).emit("operator:chat_deleted", { roomId, siteId });
+};
+// Поточний товар (з памʼяті presence) + історія переглядів — для нової сторінки діалогу
+module.exports.getProductsForRoom = async function (siteId, roomId) {
+	const visitorId = String(roomId).slice(String(siteId).length + 1);
+	let history = [];
+	try {
+		history = await getProductHistory(siteId, visitorId, null, 50);
+	} catch (e) {
+		console.error("getProductsForRoom:", e.message);
+	}
+	return { current: visitorProduct.get(roomId) || null, history: history };
 };

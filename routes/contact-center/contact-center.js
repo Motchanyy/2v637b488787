@@ -49,6 +49,7 @@ router.post("/api/contact-center/get-counters/", authorizationControllers.isAuth
 router.get("/contact-center/chat/:token/", authorizationControllers.isAuthenticated, conversationsControllers.page);
 router.post("/api/contact-center/chat/:id/messages/", authorizationControllers.isAuthenticated, conversationsControllers.messages);
 router.post("/api/contact-center/chat/:id/media/", authorizationControllers.isAuthenticated, conversationsControllers.media);
+router.post("/api/contact-center/chat/:id/products/", authorizationControllers.isAuthenticated, conversationsControllers.products);
 router.post("/api/contact-center/chat/:id/send/", authorizationControllers.isAuthenticated, conversationsControllers.send);
 router.post("/api/contact-center/chat/:id/read/", authorizationControllers.isAuthenticated, conversationsControllers.read);
 router.post("/api/contact-center/chat/:id/upload/", authorizationControllers.isAuthenticated, ccUpload.single("file"), conversationsControllers.upload);
