@@ -287,10 +287,10 @@
 			</div>
 		</div>
 
-		<div class="container-fluid mt-3 h-100">
+		<div class="container-fluid mt-3 mb-3">
 			<div class="row h-100">
 				<!-- ═══ СТРІЧКА ═══ -->
-				<div class="col-12 col-lg-8 mb-3 d-flex flex-column">
+				<div class="col-12 col-lg-8 mb-3 d-flex flex-column h-100">
 					<div class="card border-primary rounded-0 h-100 d-flex flex-column">
 						<!-- Шапка діалогу -->
 						<div class="card-header text-bg-primary rounded-0 d-flex align-items-center justify-content-between">
@@ -378,7 +378,7 @@
 				</div>
 
 				<!-- ═══ ПАНЕЛЬ СПІВРОЗМОВНИКА ═══ -->
-				<div class="col-12 col-lg-4 mb-3">
+				<div class="col-12 col-lg-4 mb-3 h-100">
 					<div class="card border-primary rounded-0 mb-3">
 						<div class="card-header text-bg-primary rounded-0"><%= i18n.__('contact_center.dialog.contact') %></div>
 						<div class="card-body">
@@ -1436,12 +1436,15 @@
 				const histBody = document.getElementById("cc_prod_hist_body");
 				if (!card || !body) return;
 
-				function renderProduct(p) {
+				let lastProduct = null; // останній відомий товар (для стану "вийшов з товару")
+
+				function renderProduct(p, isLast) {
 					if (!p || !p.name) {
 						body.innerHTML = '<div class="text-muted small text-center py-2">Клієнт ще не переглядав товари</div>';
 						return;
 					}
 					let html = "";
+					if (isLast) html += '<div class="small text-muted mb-1"><i class="fa-regular fa-clock me-1"></i>Останній переглянутий</div>';
 					if (p.image) html += '<a href="' + escapeHtml(p.url || "#") + '" target="_blank" rel="noopener"><img src="' + escapeHtml(p.image) + '" alt=""></a>';
 					html += '<div class="cc-product-name mt-2">' + escapeHtml(p.name) + "</div>";
 					if (p.brand) html += '<div class="small text-muted">' + escapeHtml(p.brand) + "</div>";
@@ -1475,7 +1478,17 @@
 						.join("");
 				}
 
-				// Початкове завантаження
+				function renderHistoryPrepend(p) {
+					if (!p || !p.name || !histBody) return;
+					const empty = histBody.querySelector(".text-muted");
+					if (empty) histBody.innerHTML = "";
+					const img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="">' : '<div style="width:44px;height:44px;background:#f6f8fa;flex-shrink:0"></div>';
+					const price = p.price ? '<div class="small text-success">' + escapeHtml(p.price) + " " + escapeHtml(p.currency || "") + "</div>" : "";
+					const el = '<a href="' + escapeHtml(p.url || "#") + '" target="_blank" rel="noopener" class="cc-prod-hist-item text-reset text-decoration-none">' + img + '<div class="flex-grow-1"><div class="small fw-semibold">' + escapeHtml(p.name) + "</div>" + price + "</div></a>";
+					histBody.insertAdjacentHTML("afterbegin", el);
+				}
+
+				// Початкове завантаження: поточний
 				fetch("/api/contact-center/chat/" + CONV_ID + "/products/", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -1485,15 +1498,53 @@
 						return r.json();
 					})
 					.then(function (data) {
-						renderProduct(data.current);
-						renderHistory(data.history);
+						const history = data.history || [];
+						if (history.length) lastProduct = history[0].product;
+						if (data.current && data.current.name) {
+							renderProduct(data.current, false);
+						} else if (lastProduct) {
+							renderProduct(lastProduct, true);
+						} else {
+							renderProduct(null);
+						}
+						renderHistory(history);
 					})
 					.catch(function () {});
 
-				// Наживо: клієнт відкрив новий товар
+				// Наживо: клієнт відкрив товар (product) або вийшов на не-товар (null)
+								function loadProducts(showLastIfNoCurrent) {
+					fetch("/api/contact-center/chat/" + CONV_ID + "/products/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({}),
+					})
+						.then(function (r) { return r.json(); })
+						.then(function (data) {
+							const history = data.history || [];
+							if (history.length) lastProduct = history[0].product;
+							if (data.current && data.current.name) {
+								renderProduct(data.current, false);
+							} else if (lastProduct) {
+								renderProduct(lastProduct, true);
+							} else {
+								renderProduct(null);
+							}
+							renderHistory(history);
+						})
+						.catch(function () {});
+				}
+
 				socket.on("cc:product", function (data) {
 					if (!data || Number(data.id_conversation) !== CONV_ID) return;
-					renderProduct(data.product);
+					if (data.product && data.product.name) {
+						lastProduct = data.product;
+						renderProduct(data.product, false);
+						renderHistoryPrepend(data.product);
+					} else {
+						// Клієнт пішов з товару (або перезавантажив на не-товарі) —
+						// перезапитуємо, щоб показати останній переглянутий з історії
+						loadProducts(true);
+					}
 				});
 			})();
 		</script>
