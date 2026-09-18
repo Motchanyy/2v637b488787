@@ -1,572 +1,403 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.1/normalize.min.css">
-  <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-  <link href='http://fonts.googleapis.com/css?family=Raleway:100,200,300,400' rel='stylesheet' type='text/css'>
-  <title>Material floating button. The index.</title>
-  <style>
-    html, body {
-      height: 100%;
-      min-height: 100%;
-      background: #E9EBEC;
-      -webkit-font-smoothing: initial;
-      text-rendering: initial;
-    }
-    html {
-      font-family: 'Raleway', sans-serif;
-      font-weight: 200;
-      touch-action: manipulation;
-    }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 3s both;
-    }
-    h1 {
-      margin: 0.2em 0;
-      color: rgba(124, 98, 152, 1);
-      font-weight: 400;
-    }
-    header {
-      background: #00C8BE;
-      padding: 0.3em 1em;
-      position: relative;
-      z-index: 20;
-    }
-    .viewCode header {
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
-    }
-    .showcode {
-      background: rgb(232, 216, 49);
-      color: rgba(124, 98, 152, 1);
-      width: 40px;
-      height: 40px;
-      text-align: center;
-      position: absolute;
-      right: 1em;
-      bottom: 0;
-      margin-bottom: -15px;
-      border-radius: 100%;
-      font-size: 16px;
-      cursor: pointer;
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
-      transition: all .3s;
-    }
-    .viewCode .showcode {
-      transform: rotateX(-180deg);
-      box-shadow: 0 -2px 5px 0 rgba(0, 0, 0, 0.26);
-    }
-    .icon-nocode, .icon-yepcode {
-      transition: opacity .3s;
-      position: absolute;
-      left: 0;
-      display: block;
-      width: 100%;
-      line-height: 40px;
-    }
-    .icon-nocode { opacity: 0; }
-    .viewCode .icon-nocode { opacity: 1; }
-    .viewCode .icon-yepcode { opacity: 0; }
-    .panel {
-      width: 90%;
-      position: relative;
-      max-width: 650px;
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
-      background: #F5F5F5;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    article {
-      min-height: 180px;
-      padding: 1em;
-      font-weight: 200;
-      line-height: 1.5em;
-      position: relative;
-    }
-    footer {
-      padding: 0.3em 1em 1em;
-    }
-    footer a {
-      color: inherit;
-    }
-    .code {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 100%;
-      overflow: scroll;
-      background: rgba(124, 98, 152, 0.94);
-      color: rgba(245, 247, 247, 0.92);
-      padding: 0 1em;
-      transition: all .4s;
-      transform: translateY(-100%);
-    }
-    .code p:first-child { margin-top: 2em; }
-    .code a { color: rgba(232, 216, 49, 0.9); }
-    .viewCode .code {
-      transform: translateY(0);
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.36);
-    }
-    .actions {
-      font-weight: 300;
-      text-transform: uppercase;
-      font-size: 0.8em;
-      padding: 1em;
-      border: none;
-      background: none;
-      transition: color .2s;
-      cursor: pointer;
-    }
-    .actions:hover {
-      color: rgb(30, 30, 171);
-      background: #F5F5F5;
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
-    }
-    code, pre {
-      background: rgba(255,255,255,0.1);
-      color: rgba(232, 216, 49, 0.9);
-      font-family: "Source Code Pro", Monaco, Menlo, Consolas, "Courier New", monospace;
-      padding: 0.5em;
-      border-radius: 3px;
-      margin: 1em 0;
-    }
-    code { display: inline; vertical-align: middle; margin: 0; }
-    pre { display: block; }
-    .striked { text-decoration: line-through; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор віджета</title>
+<style>
+  :root{
+    --ink:#1b2330; --ink-soft:#5b6675; --line:#e4e8ee; --bg:#eef1f5;
+    --card:#ffffff; --accent:#007fff; --accent-weak:#e8f1ff;
+    --danger:#e5342b; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.45;
+  }
+  .app{display:grid; grid-template-columns:380px 1fr; height:100vh}
 
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
-    }
+  /* ── Панель налаштувань ── */
+  .panel{background:var(--card); border-right:1px solid var(--line);
+    overflow-y:auto; padding:18px 18px 60px}
+  .panel h1{font-size:17px; margin:2px 0 2px; letter-spacing:-.01em}
+  .panel .sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px}
 
-    /* MFB Styles */
-    .mfb-component--tl, .mfb-component--tr, .mfb-component--bl, .mfb-component--br {
-      box-sizing: border-box;
-      position: fixed;
-      white-space: nowrap;
-      z-index: 30;
-      padding-left: 0;
-      list-style: none;
-    }
-    .mfb-component--tl *, .mfb-component--tr *, .mfb-component--bl *, .mfb-component--br *,
-    .mfb-component--tl *:before, .mfb-component--tr *:before, .mfb-component--bl *:before, .mfb-component--br *:before,
-    .mfb-component--tl *:after, .mfb-component--tr *:after, .mfb-component--bl *:after, .mfb-component--br *:after {
-      box-sizing: inherit;
-    }
-    .mfb-component--tl { left: 0; top: 0; }
-    .mfb-component--tr { right: 0; top: 0; }
-    .mfb-component--bl { left: 0; bottom: 0; }
-    .mfb-component--br { right: 15px; bottom: 15px; }
+  .card{border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px}
+  .card > .ttl{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; margin-bottom:12px}
+  .card > .ttl .n{width:20px; height:20px; border-radius:6px; background:var(--accent-weak);
+    color:var(--accent); font-size:12px; font-weight:700; display:grid; place-items:center; flex:none}
 
-    .mfb-component__button--main, .mfb-component__button--child {
-      background-color: #E40A5D;
-      display: inline-block;
-      position: relative;
-      border: none;
-      border-radius: 50%;
-      box-shadow: 0 0 4px rgba(0,0,0,0.14), 0 4px 8px rgba(0,0,0,0.28);
-      cursor: pointer;
-      outline: none;
-      padding: 0;
-      -webkit-user-drag: none;
-      color: #f1f1f1;
-    }
-    .mfb-component__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .mfb-component__list > li {
-      display: block;
-      position: absolute;
-      top: 0;
-      right: 1px;
-      padding: 10px 0;
-      margin: -10px 0;
-    }
-    .mfb-component__icon, .mfb-component__main-icon--active,
-    .mfb-component__main-icon--resting, .mfb-component__child-icon {
-      position: absolute;
-      font-size: 18px;
-      text-align: center;
-      line-height: 56px;
-      width: 100%;
-    }
-    .mfb-component__wrap {
-	  display: inline-block;
-    }
-	#menu button {
-	height: 56px;width: 56px;background-color: #E40A5D;border: none;border-radius: 50%;box-shadow: 0 0 4px rgba(0,0,0,0.14), 0 4px 8px rgba(0,0,0,0.28);cursor: pointer;outline: none;padding: 0;color: #f1f1f1;display: inline-block;margin-right: 15px;
-	}
-    .mfb-component__button--main[data-mfb-toggle="hover"]:hover .mfb-component__icon,
-    .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] .mfb-component__icon,
-    [data-mfb-state="open"] .mfb-component__icon {
-      transform: scale(1) rotate(0deg);
-    }
-    .mfb-component__button--main {
-      height: 56px;
-      width: 56px;
-      z-index: 20;
-    }
-    .mfb-component__button--child {
-      height: 56px;
-      width: 56px;
-    }
-    .mfb-component__main-icon--active,
-    .mfb-component__main-icon--resting {
-      transform: scale(1) rotate(360deg);
-      transition: transform 150ms cubic-bezier(0.4, 0, 1, 1);
-    }
-    .mfb-component__child-icon {
-      line-height: 56px;
-      font-size: 18px;
-    }
-    .mfb-component__main-icon--active {
-      opacity: 0;
-    }
-    .mfb-component__button--main[data-mfb-toggle="hover"]:hover .mfb-component__main-icon,
-    .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] .mfb-component__main-icon,
-    [data-mfb-state="open"] .mfb-component__main-icon {
-      transform: scale(1) rotate(0deg);
-    }
-    .mfb-component__button--main[data-mfb-toggle="hover"]:hover .mfb-component__main-icon--resting,
-    .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] .mfb-component__main-icon--resting,
-    [data-mfb-state="open"] .mfb-component__main-icon--resting {
-      opacity: 0;
-      position: absolute !important;
-    }
-    .mfb-component__button--main[data-mfb-toggle="hover"]:hover .mfb-component__main-icon--active,
-    .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] .mfb-component__main-icon--active,
-    [data-mfb-state="open"] .mfb-component__main-icon--active {
-      opacity: 1;
-    }
+  label.field{display:block; font-size:12px; color:var(--ink-soft); margin:0 0 5px}
+  .row{display:flex; gap:10px}
+  .row > *{flex:1; min-width:0}
+  .mb{margin-bottom:12px}
+  input[type=text]{width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font:inherit; color:var(--ink); background:#fff}
+  input[type=text]:focus, select:focus, textarea:focus{outline:2px solid var(--accent-weak); border-color:var(--accent)}
+  select{width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; background:#fff}
+  textarea{width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:12px/1.4 ui-monospace,Menlo,Consolas,monospace; resize:vertical; min-height:64px}
 
-    /* ===================================================================
-       Animations (DYNAMIC)
-       Замість жорстких :nth-child(1..4) зсув рахується формулою
-       calc(var(--i) * 70px), де --i — номер кнопки (1,2,3...),
-       який автоматично проставляє JS. Працює для будь-якої кількості.
-       =================================================================== */
+  .color{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:8px; padding:5px 8px; background:#fff}
+  .color input[type=color]{width:26px; height:26px; border:0; background:none; padding:0; cursor:pointer}
+  .color code{font:12px ui-monospace,Menlo,Consolas,monospace; color:var(--ink-soft)}
 
-    /* Slide in */
-    .mfb-component--tl.mfb-slidein .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein .mfb-component__list li,
-    .mfb-component--bl.mfb-slidein .mfb-component__list li,
-    .mfb-component--br.mfb-slidein .mfb-component__list li {
-      opacity: 0;
-      transition: all 0.5s;
-    }
-    .mfb-component--tl.mfb-slidein .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tl.mfb-slidein[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein[data-mfb-state="open"] .mfb-component__list li {
-      opacity: 1;
-      transform: translateY(calc(var(--i) * 70px));
-    }
-    .mfb-component--bl.mfb-slidein .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--bl.mfb-slidein[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--br.mfb-slidein .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--br.mfb-slidein[data-mfb-state="open"] .mfb-component__list li {
-      opacity: 1;
-      transform: translateY(calc(var(--i) * -70px));
-    }
+  .switch{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:2px 0}
+  .switch .lab{font-size:13px}
+  .toggle{position:relative; width:42px; height:24px; flex:none}
+  .toggle input{opacity:0; width:0; height:0}
+  .toggle .track{position:absolute; inset:0; background:#cdd4de; border-radius:999px; transition:background .15s}
+  .toggle .dot{position:absolute; top:3px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s}
+  .toggle input:checked + .track{background:var(--accent)}
+  .toggle input:checked + .track + .dot{transform:translateX(18px)}
 
-    /* Slide in spring */
-    .mfb-component--tl.mfb-slidein-spring .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein-spring .mfb-component__list li,
-    .mfb-component--bl.mfb-slidein-spring .mfb-component__list li,
-    .mfb-component--br.mfb-slidein-spring .mfb-component__list li {
-      opacity: 0;
-      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
-    .mfb-component--tl.mfb-slidein-spring .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tl.mfb-slidein-spring[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein-spring .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tr.mfb-slidein-spring[data-mfb-state="open"] .mfb-component__list li {
-      opacity: 1;
-      transform: translateY(calc(var(--i) * 70px));
-      transition-delay: calc(var(--i) * 0.05s);
-    }
-    .mfb-component--bl.mfb-slidein-spring .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--bl.mfb-slidein-spring[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--br.mfb-slidein-spring .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--br.mfb-slidein-spring[data-mfb-state="open"] .mfb-component__list li {
-      opacity: 1;
-      transform: translateY(calc(var(--i) * -70px));
-      transition-delay: calc(var(--i) * 0.05s);
-    }
+  .btn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
+    font:inherit; font-size:13px; cursor:pointer; color:var(--ink)}
+  .btn:hover{border-color:#c4ccd6}
+  .btn.accent{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .btn.accent:hover{background:#0071e3}
+  .btn.block{width:100%}
 
-    /* Zoom in */
-    .mfb-component--tl.mfb-zoomin .mfb-component__list li,
-    .mfb-component--tr.mfb-zoomin .mfb-component__list li {
-      transform: translateY(calc(var(--i) * 70px)) scale(0);
-      transition: all 0.5s;
-    }
-    .mfb-component--bl.mfb-zoomin .mfb-component__list li,
-    .mfb-component--br.mfb-zoomin .mfb-component__list li {
-      transform: translateY(calc(var(--i) * -70px)) scale(0);
-      transition: all 0.5s;
-    }
-    .mfb-component--tl.mfb-zoomin .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tl.mfb-zoomin[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--tr.mfb-zoomin .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tr.mfb-zoomin[data-mfb-state="open"] .mfb-component__list li {
-      transform: translateY(calc(var(--i) * 70px)) scale(1);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
-    .mfb-component--bl.mfb-zoomin .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--bl.mfb-zoomin[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--br.mfb-zoomin .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--br.mfb-zoomin[data-mfb-state="open"] .mfb-component__list li {
-      transform: translateY(calc(var(--i) * -70px)) scale(1);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
+  .child{border:1px solid var(--line); border-radius:9px; padding:11px; margin-bottom:10px; position:relative}
+  .child .head{display:flex; align-items:center; gap:8px; margin-bottom:9px}
+  .child .swatch{width:26px; height:26px; border-radius:6px; display:grid; place-items:center; flex:none}
+  .child .swatch svg{width:16px; height:16px}
+  .child .del{margin-left:auto; border:0; background:none; color:var(--ink-soft); cursor:pointer;
+    font-size:18px; line-height:1; padding:2px 6px; border-radius:6px}
+  .child .del:hover{background:#fbe9e8; color:var(--danger)}
 
-    /* Fountain */
-    .mfb-component--tl.mfb-fountain .mfb-component__list li,
-    .mfb-component--tr.mfb-fountain .mfb-component__list li {
-      transform: translateY(calc(var(--i) * -70px)) scale(0);
-      transition: all 0.5s;
-    }
-    .mfb-component--bl.mfb-fountain .mfb-component__list li,
-    .mfb-component--br.mfb-fountain .mfb-component__list li {
-      transform: translateY(calc(var(--i) * 70px)) scale(0);
-      transition: all 0.5s;
-    }
-    .mfb-component--tl.mfb-fountain .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tl.mfb-fountain[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--tr.mfb-fountain .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--tr.mfb-fountain[data-mfb-state="open"] .mfb-component__list li {
-      transform: translateY(calc(var(--i) * 70px)) scale(1);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
-    .mfb-component--bl.mfb-fountain .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--bl.mfb-fountain[data-mfb-state="open"] .mfb-component__list li,
-    .mfb-component--br.mfb-fountain .mfb-component__wrap:hover .mfb-component__button--main[data-mfb-toggle="hover"] ~ .mfb-component__list li,
-    .mfb-component--br.mfb-fountain[data-mfb-state="open"] .mfb-component__list li {
-      transform: translateY(calc(var(--i) * -70px)) scale(1);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
+  details{margin-top:8px}
+  details summary{font-size:12px; color:var(--accent); cursor:pointer; user-select:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"＋ "; }
+  details[open] summary::before{content:"－ "; }
 
-    /* Labels */
-    [data-mfb-label]:after {
-      content: attr(data-mfb-label);
-      opacity: 0;
-      transition: all 0.5s;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 4px 10px;
-      border-radius: 3px;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 14px;
-      font-weight: normal;
-      pointer-events: none;
-      line-height: normal;
-      position: absolute;
-      top: 50%;
-      margin-top: -11px;
-    }
-    .mfb-component__wrap:hover [data-mfb-label]:after,
-    [data-mfb-state="open"] [data-mfb-label]:after {
-      opacity: 1;
-      transition: all 0.3s;
-    }
-    .mfb-component--br [data-mfb-label]:after,
-    .mfb-component--tr [data-mfb-label]:after {
-      right: 70px;
-    }
-    .mfb-component--br .mfb-component__list [data-mfb-label]:after,
-    .mfb-component--tr .mfb-component__list [data-mfb-label]:after {
-      right: 70px;
-    }
-    .mfb-component--tl [data-mfb-label]:after,
-    .mfb-component--bl [data-mfb-label]:after {
-      left: 70px;
-    }
-    .mfb-component--tl .mfb-component__list [data-mfb-label]:after,
-    .mfb-component--bl .mfb-component__list [data-mfb-label]:after {
-      left: 70px;
-    }
-  </style>
+  .cfg textarea{min-height:150px; color:#2b3444}
+
+  /* ── Прев'ю ── */
+  .stage{position:relative; overflow:hidden;
+    background:
+      linear-gradient(0deg,rgba(0,0,0,.02),rgba(0,0,0,.02)),
+      repeating-linear-gradient(45deg,#e9edf2 0 12px,#eef2f6 12px 24px);
+  }
+  .stage .browser{position:absolute; inset:26px; background:#fff; border-radius:12px;
+    box-shadow:0 12px 40px rgba(31,45,61,.14); overflow:hidden; display:flex; flex-direction:column}
+  .stage .bar{height:40px; flex:none; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:7px; padding:0 14px}
+  .stage .bar i{width:11px; height:11px; border-radius:50%; background:#e0e4ea}
+  .stage .bar .url{margin-left:10px; height:22px; flex:1; max-width:340px; background:#f1f3f6; border-radius:6px}
+  .stage .content{flex:1; position:relative; padding:22px}
+  .stage .ph{height:11px; border-radius:6px; background:#eef1f5; margin-bottom:12px}
+  .stage .ph.t{height:20px; width:52%; background:#e8ebf0}
+  .stage .ph.s{width:88%} .stage .ph.m{width:74%} .stage .ph.l{width:94%}
+  .stage .hint{position:absolute; left:22px; bottom:16px; font-size:12px; color:#9aa4b2}
+
+  /* ── Віджет (як у widget.js) ── */
+  #lc-dock{position:absolute; right:16px; bottom:16px; z-index:5; display:flex; align-items:flex-end; gap:15px}
+  .lc-fab{position:relative; width:52px; height:52px; border:0; cursor:default;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28); transition:transform .15s ease}
+  .lc-fab:hover{transform:scale(1.06)}
+  .lc-fab svg{width:24px; height:24px}
+
+  .mfb-wrap{position:relative; display:inline-flex}
+  .mfb-main{position:relative; width:52px; height:52px; border:0; cursor:pointer; z-index:20;
+    display:flex; align-items:center; justify-content:center; text-decoration:none;
+    box-shadow:0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28); transition:transform .15s ease}
+  .mfb-main:hover{transform:scale(1.06)}
+  .mfb-main .ic{position:absolute; top:50%; left:50%; width:24px; height:24px; margin:-12px 0 0 -12px;
+    transition:opacity .2s ease, transform .2s ease}
+  .mfb-main .ic.active{opacity:0; transform:rotate(-90deg)}
+  .mfb-wrap:hover .mfb-main .ic.resting{opacity:0; transform:rotate(90deg)}
+  .mfb-wrap:hover .mfb-main .ic.active{opacity:1; transform:rotate(0)}
+
+  .mfb-list{list-style:none; margin:0; padding:0; position:absolute; left:0; bottom:0; width:52px}
+  .mfb-list > li{position:absolute; left:0; bottom:0; width:52px; padding:8px 0; margin:-8px 0;
+    opacity:0; transform:translateY(0) scale(0);
+    transition:transform .3s cubic-bezier(.4,0,.2,1), opacity .3s}
+  .mfb-wrap:hover .mfb-list > li{opacity:1; transform:translateY(calc(var(--i) * -64px)) scale(1);
+    transition-delay:calc(var(--i) * .04s)}
+  .mfb-child{position:relative; display:flex; align-items:center; justify-content:center; width:52px; height:52px;
+    border:0; cursor:pointer; text-decoration:none;
+    box-shadow:0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28); transition:transform .15s ease}
+  .mfb-child:hover{transform:scale(1.06)}
+  .mfb-child svg{width:24px; height:24px}
+  .mfb-child[data-label]::after{content:attr(data-label); position:absolute; right:64px; top:50%;
+    transform:translateY(-50%); white-space:nowrap; background:rgba(0,0,0,.72); color:#fff;
+    font:12px/1 system-ui,sans-serif; padding:6px 9px; border-radius:4px; opacity:0; transition:opacity .2s; pointer-events:none}
+  .mfb-wrap:hover .mfb-child[data-label]:hover::after{opacity:1}
+
+  @media (max-width:820px){
+    .app{grid-template-columns:1fr; height:auto}
+    .panel{max-height:none; border-right:0; border-bottom:1px solid var(--line)}
+    .stage{min-height:520px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
 </head>
 <body>
+<div class="app">
 
-  <div id="menu" class="mfb-component--br mfb-zoomin">
-  <button>
-        <i class="mfb-component__main-icon--resting ion-plus-round"></i>
-        <i class="mfb-component__main-icon--active ion-close-round"></i>
-      </button>
-    <li class="mfb-component__wrap">
-      <a href="#" class="mfb-component__button--main" data-mfb-toggle="hover">
-        <i class="mfb-component__main-icon--resting ion-plus-round"></i>
-        <i class="mfb-component__main-icon--active ion-close-round"></i>
-      </a>
-      <ul class="mfb-component__list">
-        <li>
-          <a href="https://github.com/nobitagit/material-floating-button/" data-mfb-label="View on Github" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-github"></i>
-          </a>
-        </li>
-        <li>
-          <a href="https://github.com/nobitagit" data-mfb-label="Follow me on Github" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-octocat"></i>
-          </a>
-        </li>
-        <li>
-          <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css"
-             data-mfb-label="Share on Twitter" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-twitter"></i>
-          </a>
-        </li>
-		<li>
-          <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css"
-             data-mfb-label="Share on Twitter" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-twitter"></i>
-          </a>
-        </li>
-		<li>
-          <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css"
-             data-mfb-label="Share on Twitter" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-twitter"></i>
-          </a>
-        </li>
-		<li>
-          <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css"
-             data-mfb-label="Share on Twitter" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-twitter"></i>
-          </a>
-        </li>
-		<li>
-          <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css"
-             data-mfb-label="Share on Twitter" class="mfb-component__button--child">
-            <i class="mfb-component__child-icon ion-social-twitter"></i>
-          </a>
-        </li>
-      </ul>
-    </li>
-  </div>
+  <!-- ЛІВА ПАНЕЛЬ -->
+  <aside class="panel">
+    <h1>Редактор віджета</h1>
+    <p class="sub">Симуляція. Змінюй налаштування — прев'ю праворуч оновлюється миттєво.</p>
 
-  <section id="panel" class="panel">
-    <header>
-      <h1>Material Floating Buttons</h1>
-      <span id="showcode" class="showcode">
-        <i class="ion-eye icon-yepcode"></i>
-        <i class="ion-eye-disabled icon-nocode"></i>
-      </span>
-    </header>
-    <article>
-      <p>
-        Customizable, semantic Material button implementation. <br>
-        <span class="striked">Shamelessly</span> Openly inspired by Google Inbox, Evernote and Path.
-      </p>
-      <p>
-        To add Material Floating Buttons to any project just download or clone the repo from Github.<br>
-        Try it yourself by selecting a style here below, or click on the yellow button here above for a code preview and refer to the docs more info.
-      </p>
-      <p>
-        <select id="selections-fx">
-          <option value=" mfb-zoomin " selected>Zoom in</option>
-          <option value=" mfb-slidein ">Slide in</option>
-          <option value=" mfb-slidein-spring ">Slide in (spring)</option>
-          <option value=" mfb-fountain ">Fountain</option>
-        </select>
-        <select id="selections-pos">
-          <option value="mfb-component--tl ">top left</option>
-          <option value="mfb-component--tr ">top right</option>
-          <option value="mfb-component--bl ">bottom left</option>
-          <option value="mfb-component--br " selected>bottom right</option>
-        </select>
-      </p>
+    <!-- №1 ID -->
+    <section class="card">
+      <div class="ttl"><span class="n">1</span> Ідентифікатор віджета</div>
+      <label class="field" for="siteId">ID сайту / віджета</label>
+      <input id="siteId" type="text" placeholder="напр. acme-store" autocomplete="off">
+    </section>
 
-      <div class="code">
-        <p>
-          To add Material Floating Buttons to any project just download the files from here below or clone the repo from Github. <br>
-        </p>
-        <pre>git clone https://github.com/nobitagit/polymer-slidenav.git</pre>
-        <p>
-          After referencing the styles in your header drop the MFB markup in your HTML like so:
-        </p>
-<pre>&lt;ul class="mfb-component--br mfb-slidein" data-mfb-toggle="hover"&gt;
-  &lt;li class="mfb-component__wrap"&gt;
-    &lt;a href="#" data-mfb-label="A label" class="mfb-component__button--main"&gt;
-      &lt;ul class="mfb-component__list"&gt;
-        &lt;li&gt;
-          &lt;a href="#" data-mfb-label="Add" data-mfb-label="label with long long title" class="mfb-component__button--child"&gt;
-            &lt;i class="mfb-component__child-icon ion-paper-airplane"&gt;&lt;/i&gt;
-          &lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;</pre>
-        <p>
-          The two classes of the main <code>&lt;ul&gt;</code> tag define the position of the component and its associated animation. The rest of the code always stays the same regardless of position and animation chosen. Refer to the docs or to the showcase for a thorough explanation.
-        </p>
-        <p>
-          The best way to integrate MFB in existing projects is to build the styles directly from the source. The scss file is filled with customizable variables. From there choose your favorite colors and sizes and then compile the css.
-        </p>
-        <p>
-          If you use <a href="http://gruntjs.com/">Grunt</a> and have cloned the repo just run <code>grunt build</code> or <code>grunt watch</code> to have automatic compilation.
-        </p>
+    <!-- Кнопка чату (№2, №3 + перемикач) -->
+    <section class="card">
+      <div class="ttl"><span class="n">2·3</span> Кнопка чату</div>
+
+      <div class="switch mb">
+        <span class="lab">Показувати кнопку чату</span>
+        <span class="toggle"><input id="chatShow" type="checkbox" checked><span class="track"></span><span class="dot"></span></span>
       </div>
-    </article>
-    <footer>
-      <a href="https://github.com/nobitagit/material-floating-button">
-        <button class="actions">
-          <i class="ion-social-github"></i> View on Github
-        </button>
-      </a>
-      <a href="http://twitter.com/share?text=Check this material floating button component!&url=http://nobitagit.github.io/material-floating-button/&hashtags=material,design,button,css">
-        <button class="actions">
-          <i class="ion-social-twitter"></i> Share on Twitter
-        </button>
-      </a>
-    </footer>
-  </section>
 
-  <script>
-    var panel = document.getElementById('panel'),
-        menu = document.getElementById('menu'),
-        showcode = document.getElementById('showcode'),
-        selectFx = document.getElementById('selections-fx'),
-        selectPos = document.getElementById('selections-pos'),
-        effect = 'mfb-zoomin',
-        pos = 'mfb-component--br';
+      <div class="row mb">
+        <div>
+          <label class="field">Колір фону</label>
+          <div class="color"><input id="chatBg" type="color" value="#007fff"><code id="chatBgC">#007fff</code></div>
+        </div>
+        <div>
+          <label class="field">Колір іконки</label>
+          <div class="color"><input id="chatIc" type="color" value="#ffffff"><code id="chatIcC">#ffffff</code></div>
+        </div>
+      </div>
 
-    // Автоматична нумерація дочірніх кнопок: кожен <li> отримує --i (1,2,3...).
-    // Завдяки цьому анімації рахують зсув через calc(var(--i) * 70px)
-    // і працюють для будь-якої кількості кнопок.
-    (function indexButtons() {
-      var items = menu.querySelectorAll('.mfb-component__list > li');
-      for (var i = 0; i < items.length; i++) {
-        items[i].style.setProperty('--i', i + 1);
-      }
-    })();
+      <label class="field">Іконка</label>
+      <select id="chatIcon"></select>
+      <details>
+        <summary>Власний SVG (необов'язково)</summary>
+        <textarea id="chatSvg" placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;…&lt;/svg&gt;"></textarea>
+      </details>
+    </section>
 
-    showcode.addEventListener('click', function() {
-      panel.classList.toggle('viewCode');
-    });
-    selectFx.addEventListener('change', function() {
-      effect = this.options[this.selectedIndex].value;
-      renderMenu();
-    });
-    selectPos.addEventListener('change', function() {
-      pos = this.options[this.selectedIndex].value;
-      renderMenu();
-    });
+    <!-- MFB головна кнопка (№4, №5) -->
+    <section class="card">
+      <div class="ttl"><span class="n">4·5</span> Кнопка «+/×» (меню)</div>
 
-    function renderMenu() {
-      menu.style.display = 'none';
-      setTimeout(function() {
-        menu.style.display = 'block';
-        menu.className = pos + effect;
-      }, 1);
-    }
-  </script>
+      <div class="row mb">
+        <div>
+          <label class="field">Колір фону</label>
+          <div class="color"><input id="mainBg" type="color" value="#007fff"><code id="mainBgC">#007fff</code></div>
+        </div>
+        <div>
+          <label class="field">Колір іконки</label>
+          <div class="color"><input id="mainIc" type="color" value="#ffffff"><code id="mainIcC">#ffffff</code></div>
+        </div>
+      </div>
+
+      <label class="field">Іконка (закритий стан)</label>
+      <select id="mainIcon"></select>
+      <details>
+        <summary>Власний SVG (необов'язково)</summary>
+        <textarea id="mainSvg" placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;…&lt;/svg&gt;"></textarea>
+      </details>
+    </section>
+
+    <!-- №6 Дочірні кнопки -->
+    <section class="card">
+      <div class="ttl"><span class="n">6</span> Кнопки меню</div>
+      <div id="children"></div>
+      <button id="addChild" class="btn accent block">＋ Додати кнопку</button>
+    </section>
+
+    <!-- Конфіг -->
+    <section class="card cfg">
+      <div class="ttl">Конфіг</div>
+      <p class="sub" style="margin:-4px 0 10px">Те, що редактор збереже для цього віджета.</p>
+      <textarea id="cfgOut" readonly></textarea>
+    </section>
+  </aside>
+
+  <!-- ПРАВА ЧАСТИНА: ПРЕВ'Ю -->
+  <main class="stage">
+    <div class="browser">
+      <div class="bar"><i></i><i></i><i></i><span class="url"></span></div>
+      <div class="content">
+        <div class="ph t"></div>
+        <div class="ph l"></div><div class="ph s"></div><div class="ph m"></div>
+        <div class="ph l"></div><div class="ph s"></div>
+        <div class="hint">Наведи на кнопку «+» — меню розкриється вгору</div>
+        <div id="lc-dock"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ── Бібліотека іконок (inner paths, viewBox 0 0 24 24) ── */
+const ICONS = {
+  chat:'<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>',
+  chat2:'<path d="M12 2C6.5 2 2 5.9 2 10.7c0 2.7 1.4 5.1 3.7 6.7v3.6l3.4-1.9c.9.2 1.9.4 2.9.4 5.5 0 10-3.9 10-8.8S17.5 2 12 2z"/>',
+  plus:'<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>',
+  close:'<path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/>',
+  phone:'<path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.7 21 3 13.3 3 3.9 3 3.4 3.4 3 4 3h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .7-.2 1l-2.3 2.2z"/>',
+  telegram:'<path d="M9.8 15.6 9.6 19c.4 0 .6-.2.8-.4l1.9-1.8 3.9 2.9c.7.4 1.2.2 1.4-.7l2.6-12c.2-1-.3-1.5-1-1.2L3.5 10.2c-1 .4-1 .9-.2 1.2l4.2 1.3L17 6.6c.5-.3.9-.1.6.2l-7.8 8.8z"/>',
+  email:'<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>',
+  instagram:'<path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm5-3.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/>',
+  cart:'<path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.2 14h9.5c.8 0 1.4-.4 1.7-1.1l3.6-6.6-1.7-1-3.6 6.7H8.5L4.3 2H1v2h2l3.6 7.6-1.4 2.5c-.7 1.3.2 2.9 1.7 2.9h12v-2H7.2z"/>',
+  question:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm1.9-6.7-.9.9c-.7.7-1 1.2-1 2.3h-2v-.5c0-.8.3-1.6 1-2.3l1.2-1.2c.3-.3.5-.8.5-1.3 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.2 1.8-4 4-4s4 1.8 4 4c0 .9-.4 1.7-1.1 2.4z"/>',
+  heart:'<path d="M12 21s-7.5-4.9-10-9.3C.4 8.6 1.8 5 5 5c1.9 0 3.2 1 4 2 .8-1 2.1-2 4-2 3.2 0 4.6 3.6 3 6.7C19.5 16.1 12 21 12 21z"/>',
+  location:'<path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>',
+};
+const ICON_LABELS = {
+  chat:'Чат', chat2:'Чат (округлий)', plus:'Плюс', close:'Хрестик', phone:'Телефон',
+  telegram:'Telegram', email:'Email', instagram:'Instagram', cart:'Кошик',
+  question:'Питання', heart:'Серце', location:'Локація'
+};
+const ICON_KEYS = Object.keys(ICONS);
+
+function svgMarkup(iconKey, custom, color){
+  if (custom && custom.trim()) return custom;                 // власний SVG — як є
+  const inner = ICONS[iconKey] || ICONS.chat;
+  return '<svg viewBox="0 0 24 24" style="fill:'+color+'">'+inner+'</svg>';
+}
+function fillSelect(sel, current){
+  sel.innerHTML = ICON_KEYS.map(k =>
+    '<option value="'+k+'"'+(k===current?' selected':'')+'>'+ICON_LABELS[k]+'</option>').join('');
+}
+
+/* ── Стан ── */
+const state = {
+  siteId:'acme-store',
+  chat:{ show:true, bg:'#007fff', icon:'#ffffff', iconKey:'chat', custom:'' },
+  main:{ bg:'#007fff', icon:'#ffffff', iconKey:'plus', custom:'' },
+  children:[
+    { label:'Подзвонити', bg:'#4caf50', icon:'#ffffff', iconKey:'phone', custom:'' },
+    { label:'Telegram',   bg:'#29b6f6', icon:'#ffffff', iconKey:'telegram', custom:'' },
+    { label:'Email',      bg:'#f4511e', icon:'#ffffff', iconKey:'email', custom:'' },
+  ]
+};
+
+/* ── Прев'ю ── */
+const dock = document.getElementById('lc-dock');
+function renderPreview(){
+  let html = '';
+  if (state.chat.show){
+    html += '<button class="lc-fab" style="background:'+state.chat.bg+'" aria-label="Чат">'
+          + svgMarkup(state.chat.iconKey, state.chat.custom, state.chat.icon) + '</button>';
+  }
+  const items = state.children.map((c,i) =>
+    '<li style="--i:'+(i+1)+'">'
+      + '<a class="mfb-child" '+(c.label?('data-label="'+escapeAttr(c.label)+'"'):'')
+      + ' style="background:'+c.bg+'">'+svgMarkup(c.iconKey,c.custom,c.icon)+'</a>'
+    + '</li>').join('');
+  html += '<div class="mfb-wrap">'
+        +   '<a href="#" class="mfb-main" style="background:'+state.main.bg+'" aria-label="Меню" onclick="return false">'
+        +     '<span class="ic resting">'+svgMarkup(state.main.iconKey,state.main.custom,state.main.icon)+'</span>'
+        +     '<span class="ic active">'+svgMarkup('close','',state.main.icon)+'</span>'
+        +   '</a>'
+        +   '<ul class="mfb-list">'+items+'</ul>'
+        + '</div>';
+  dock.innerHTML = html;
+}
+function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ── Конфіг ── */
+function renderConfig(){
+  const out = {
+    siteId: state.siteId,
+    chatButton: { enabled: state.chat.show, bg: state.chat.bg, iconColor: state.chat.icon,
+      icon: state.chat.custom.trim() ? 'custom' : state.chat.iconKey },
+    menuButton: { bg: state.main.bg, iconColor: state.main.icon,
+      icon: state.main.custom.trim() ? 'custom' : state.main.iconKey },
+    buttons: state.children.map(c => ({
+      label: c.label, bg: c.bg, iconColor: c.icon,
+      icon: c.custom.trim() ? 'custom' : c.iconKey
+    }))
+  };
+  document.getElementById('cfgOut').value = JSON.stringify(out, null, 2);
+}
+
+function refresh(){ renderPreview(); renderConfig(); }
+
+/* ── Прив'язка простих контролів ── */
+function bindColor(inputId, codeId, apply){
+  const inp = document.getElementById(inputId), code = document.getElementById(codeId);
+  inp.addEventListener('input', () => { code.textContent = inp.value; apply(inp.value); refresh(); });
+}
+function bindText(id, apply){
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => { apply(el.value); refresh(); });
+}
+
+document.getElementById('siteId').value = state.siteId;
+bindText('siteId', v => state.siteId = v);
+
+document.getElementById('chatShow').addEventListener('change', e => { state.chat.show = e.target.checked; refresh(); });
+bindColor('chatBg','chatBgC', v => state.chat.bg = v);
+bindColor('chatIc','chatIcC', v => state.chat.icon = v);
+fillSelect(document.getElementById('chatIcon'), state.chat.iconKey);
+bindText('chatIcon', v => state.chat.iconKey = v);
+bindText('chatSvg', v => state.chat.custom = v);
+
+bindColor('mainBg','mainBgC', v => state.main.bg = v);
+bindColor('mainIc','mainIcC', v => state.main.icon = v);
+fillSelect(document.getElementById('mainIcon'), state.main.iconKey);
+bindText('mainIcon', v => state.main.iconKey = v);
+bindText('mainSvg', v => state.main.custom = v);
+
+/* ── Дочірні кнопки (динамічно) ── */
+const childrenBox = document.getElementById('children');
+function renderChildrenEditor(){
+  childrenBox.innerHTML = '';
+  state.children.forEach((c, idx) => childrenBox.appendChild(childRow(c, idx)));
+}
+function childRow(c, idx){
+  const wrap = document.createElement('div');
+  wrap.className = 'child';
+  wrap.innerHTML =
+    '<div class="head">'
+      + '<span class="swatch" style="background:'+c.bg+'">'+svgMarkup(c.iconKey,c.custom,c.icon)+'</span>'
+      + '<strong style="font-size:13px">Кнопка '+(idx+1)+'</strong>'
+      + '<button class="del" title="Видалити" aria-label="Видалити">✕</button>'
+    + '</div>'
+    + '<label class="field">Назва (підказка)</label>'
+    + '<input type="text" class="c-label" value="'+escapeAttr(c.label)+'" placeholder="напр. Viber">'
+    + '<div class="row" style="margin-top:12px">'
+      + '<div><label class="field">Фон</label><div class="color"><input type="color" class="c-bg" value="'+c.bg+'"><code>'+c.bg+'</code></div></div>'
+      + '<div><label class="field">Іконка</label><div class="color"><input type="color" class="c-ic" value="'+c.icon+'"><code>'+c.icon+'</code></div></div>'
+    + '</div>'
+    + '<label class="field" style="margin-top:12px">Іконка</label>'
+    + '<select class="c-icon"></select>'
+    + '<details><summary>Власний SVG (необов\'язково)</summary>'
+      + '<textarea class="c-svg" placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;…&lt;/svg&gt;">'+escapeAttr(c.custom)+'</textarea>'
+    + '</details>';
+
+  fillSelect(wrap.querySelector('.c-icon'), c.iconKey);
+
+  const swatch = wrap.querySelector('.swatch');
+  const redrawSwatch = () => { swatch.style.background = c.bg; swatch.innerHTML = svgMarkup(c.iconKey,c.custom,c.icon); };
+
+  wrap.querySelector('.c-label').addEventListener('input', e => { c.label = e.target.value; refresh(); });
+  wrap.querySelector('.c-bg').addEventListener('input', e => {
+    c.bg = e.target.value; e.target.nextElementSibling.textContent = c.bg; redrawSwatch(); refresh(); });
+  wrap.querySelector('.c-ic').addEventListener('input', e => {
+    c.icon = e.target.value; e.target.nextElementSibling.textContent = c.icon; redrawSwatch(); refresh(); });
+  wrap.querySelector('.c-icon').addEventListener('input', e => { c.iconKey = e.target.value; redrawSwatch(); refresh(); });
+  wrap.querySelector('.c-svg').addEventListener('input', e => { c.custom = e.target.value; redrawSwatch(); refresh(); });
+  wrap.querySelector('.del').addEventListener('click', () => {
+    state.children.splice(idx, 1); renderChildrenEditor(); refresh(); });
+
+  return wrap;
+}
+document.getElementById('addChild').addEventListener('click', () => {
+  state.children.push({ label:'Нова кнопка', bg:'#607d8b', icon:'#ffffff', iconKey:'chat2', custom:'' });
+  renderChildrenEditor(); refresh();
+});
+
+/* ── Старт ── */
+renderChildrenEditor();
+refresh();
+</script>
 </body>
 </html>
